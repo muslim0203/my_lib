@@ -33,7 +33,10 @@ class BindServiceProvider extends ServiceProvider implements DeferrableProvider
     public function register(): void
     {
         $this->app->bind(MailInterface::class, function () {
-            $token = rand(1000, 9999);
+            // Kriptografik jihatdan xavfsiz olti xonali kod. rand() taxmin
+            // qilinadigan ketma-ketlik bergani uchun ishlatilmaydi.
+            $token = random_int(100000, 999999);
+
             return new MailService($token, new VerifyMail($token));
         });
 
@@ -54,22 +57,22 @@ class BindServiceProvider extends ServiceProvider implements DeferrableProvider
         $this->app
             ->when(PaymeService::class)
             ->needs('$merchantId')
-            ->give(config('payme.merchant_id'));
+            ->give(fn () => config('payme.merchant_id'));
 
         $this->app
             ->when(PaymeService::class)
             ->needs('$login')
-            ->give(config('payme.login'));
+            ->give(fn () => config('payme.login'));
 
         $this->app
             ->when(PaymeService::class)
             ->needs('$key')
-            ->give(config('payme.key'));
+            ->give(fn () => config('payme.key'));
 
         $this->app
             ->when(PaymeService::class)
             ->needs('$url')
-            ->give(config('payme.url'));
+            ->give(fn () => config('payme.url'));
 
         $this->app
             ->when(PaymeController::class)

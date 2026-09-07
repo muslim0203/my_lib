@@ -1,4 +1,6 @@
-FROM php:8.3.0-cli
+# Base image: "php:8.3.0-cli" -> "php:8.3-cli" (oxirgi 8.3 patch relizi).
+# Teg mavjudligini bu mashinadan TEKSHIRA OLMADIM (Docker/tarmoq yo'q).
+FROM php:8.3-cli
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y  \
     libmcrypt-dev  \

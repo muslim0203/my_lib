@@ -24,34 +24,7 @@ class FileManagerService implements FileManagerInterface
      */
     public function upload(\App\Http\Requests\FileManager\File $file): FileViewResource
     {
-        $uploadedFile = $file->file('file');
-
-        $hash = hash_file(
-            $this->getHash(),
-            $uploadedFile->getRealPath()
-        );
-
-        if (!empty($file = $this->fileManagerRepository->findByHash($hash))) {
-            return new FileViewResource($file, true);
-        }
-
-        $fileName = $uploadedFile->hashName();
-
-        if (!Storage::put($this->getPath(), $uploadedFile)) {
-            abort(400, __("client.File upload doesn't work"));
-        }
-
-        $file = new File();
-        $file->setFileName($fileName);
-        $file->setHash($hash);
-        $file->setOriginalName($uploadedFile->getClientOriginalName());
-        $file->setPath('/storage' . $this->getPath());
-        $file->setMimeType($uploadedFile->getClientMimeType());
-        $file->setExtension($uploadedFile->extension());
-        $file->setSize((string)$uploadedFile->getSize());
-        $this->fileManagerRepository->save($file);
-
-        return new FileViewResource($file);
+        return $this->store($file->file('file'));
     }
 
     /**
@@ -60,18 +33,35 @@ class FileManagerService implements FileManagerInterface
      */
     public function image($uploadedFile): FileViewResource
     {
+        return $this->store($uploadedFile);
+    }
+
+    /**
+     * Faylni maxfiy diskka yozadi va yozuvini saqlaydi.
+     *
+     * Fayllar web root'dan tashqarida turadi; havola har doim
+     * avtorizatsiya qiluvchi `file-view` marshrutiga ishora qiladi.
+     *
+     * @param \Illuminate\Http\UploadedFile $uploadedFile
+     * @return FileViewResource
+     */
+    protected function store($uploadedFile): FileViewResource
+    {
         $hash = hash_file(
             $this->getHash(),
             $uploadedFile->getRealPath()
         );
 
-        if (!empty($file = $this->fileManagerRepository->findByHash($hash))) {
-            return new FileViewResource($file, true);
+        if (!empty($existing = $this->fileManagerRepository->findByHash($hash))) {
+            return new FileViewResource($existing, true);
         }
 
         $fileName = $uploadedFile->hashName();
 
-        if (!Storage::put($this->getPath(), $uploadedFile)) {
+        $stored = Storage::disk(config('filesystems.upload_disk'))
+            ->putFileAs($this->getPath(), $uploadedFile, $fileName);
+
+        if ($stored === false) {
             abort(400, __("client.File upload doesn't work"));
         }
 
@@ -79,7 +69,7 @@ class FileManagerService implements FileManagerInterface
         $file->setFileName($fileName);
         $file->setHash($hash);
         $file->setOriginalName($uploadedFile->getClientOriginalName());
-        $file->setPath('/storage' . $this->getPath());
+        $file->setPath(rtrim((string)config('filesystems.public_url_prefix'), '/'));
         $file->setMimeType($uploadedFile->getClientMimeType());
         $file->setExtension($uploadedFile->extension());
         $file->setSize((string)$uploadedFile->getSize());

@@ -21,3 +21,6 @@ storage/framework/cache
 storage/app/
 bootstrap/cache
 
+
+# Composer is not vendored into the repository (3.6 MB binary).
+*.phar

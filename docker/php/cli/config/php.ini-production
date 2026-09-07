@@ -1,3 +1,21 @@
+; =============================================================================
+; marketplace - PHP-CLI uchun PRODUCTION php.ini
+; (artisan, queue:work, schedule:run). php.ini-local lokal ish uchun qoldirildi.
+; docker-compose.prod.yml AYNAN SHU faylni mount qiladi.
+;
+; O'zgartirilganlar (asl satr raqamlari):
+;   379 zend.exception_ignore_args  Off  -> On
+;   398 expose_php                  On   -> Off
+;   407 max_execution_time          600  -> 0    (CLI da 0 = cheksiz; queue:work uchun)
+;   428 memory_limit                2048M-> 512M
+;   484 error_reporting             E_ALL-> E_ALL & ~E_DEPRECATED
+;   501 display_errors              On   -> Off
+;   510 display_startup_errors      On   -> Off
+;   696 post_max_size               100M -> 96M
+;   848 upload_max_filesize         2M   -> 80M  (70 MB audio uchun 2M yetmasdi)
+;  1584 zend.assertions             1    -> -1
+; =============================================================================
+
 [PHP]
 
 ;;;;;;;;;;;;;;;;;;;
@@ -376,7 +394,7 @@ zend.enable_gc = On
 ; Default Value: Off
 ; Development Value: Off
 ; Production Value: On
-zend.exception_ignore_args = Off
+zend.exception_ignore_args = On
 
 ; Allows setting the maximum string length in an argument of a stringified stack trace
 ; to a value between 0 and 1000000.
@@ -395,7 +413,7 @@ zend.exception_string_param_max_len = 15
 ; threat in any way, but it makes it possible to determine whether you use PHP
 ; on your server or not.
 ; https://php.net/expose-php
-expose_php = On
+expose_php = Off
 
 ;;;;;;;;;;;;;;;;;;;
 ; Resource Limits ;
@@ -404,7 +422,7 @@ expose_php = On
 ; Maximum execution time of each script, in seconds
 ; https://php.net/max-execution-time
 ; Note: This directive is hardcoded to 0 for the CLI SAPI
-max_execution_time = 600
+max_execution_time = 0
 
 ; Maximum amount of time each script may spend parsing request data. It's a good
 ; idea to limit this time on productions servers in order to eliminate unexpectedly
@@ -425,7 +443,7 @@ max_input_time = 60
 
 ; Maximum amount of memory a script may consume
 ; https://php.net/memory-limit
-memory_limit = 2048M
+memory_limit = 512M
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Error handling and logging ;
@@ -481,7 +499,7 @@ memory_limit = 2048M
 ; Development Value: E_ALL
 ; Production Value: E_ALL & ~E_DEPRECATED & ~E_STRICT
 ; https://php.net/error-reporting
-error_reporting = E_ALL
+error_reporting = E_ALL & ~E_DEPRECATED
 
 ; This directive controls whether or not and where PHP will output errors,
 ; notices and warnings too. Error output is very useful during development, but
@@ -498,7 +516,7 @@ error_reporting = E_ALL
 ; Development Value: On
 ; Production Value: Off
 ; https://php.net/display-errors
-display_errors = On
+display_errors = Off
 
 ; The display of errors which occur during PHP's startup sequence are handled
 ; separately from display_errors. We strongly recommend you set this to 'off'
@@ -507,7 +525,7 @@ display_errors = On
 ; Development Value: On
 ; Production Value: Off
 ; https://php.net/display-startup-errors
-display_startup_errors = On
+display_startup_errors = Off
 
 ; Besides displaying errors, PHP can also log errors to locations such as a
 ; server-specific log, STDERR, or a location specified by the error_log
@@ -1581,7 +1599,7 @@ session.sid_bits_per_character = 5
 ; Development Value: 1
 ; Production Value: -1
 ; https://php.net/zend.assertions
-zend.assertions = 1
+zend.assertions = -1
 
 ; Assert(expr); active by default.
 ; https://php.net/assert.active
@@ -1953,3 +1971,35 @@ ldap.max_links = -1
 
 ; List of headers files to preload, wildcard patterns allowed.
 ;ffi.preload=
+
+; =============================================================================
+; PRODUCTION OVERRIDE (php.ini da oxirgi qiymat kuchga kiradi)
+; =============================================================================
+error_log = /proc/self/fd/2
+log_errors = On
+display_errors = Off
+display_startup_errors = Off
+html_errors = Off
+log_errors_max_len = 0
+
+upload_max_filesize = 80M
+post_max_size = 96M
+upload_tmp_dir = /tmp
+
+[opcache]
+opcache.enable = 1
+; enable_cli = 1: CLI da opcache PROTSESSLAR ORASIDA SAQLANMAYDI, shuning uchun
+; qisqa "artisan ..." chaqiruvlariga foydasi deyarli yo'q. Lekin UZOQ ISHLAYDIGAN
+; "queue:work" protsessi ichida har bir job uchun fayllar qayta kompilyatsiya
+; qilinmaydi - asosiy yutuq shu yerda.
+opcache.enable_cli = 1
+opcache.memory_consumption = 128
+opcache.interned_strings_buffer = 16
+opcache.max_accelerated_files = 20000
+; FPM dan FARQLI o'laroq bu yerda validate_timestamps = 1.
+; Sabab: queue:work protsessi deploy paytida darhol qayta ishga tushmasligi
+; mumkin; timestamp tekshiruvi eski kod bilan ishlab qolish ehtimolini
+; kamaytiradi. Baribir deploydan keyin "queue:restart" chaqiriladi.
+opcache.validate_timestamps = 1
+opcache.revalidate_freq = 0
+opcache.save_comments = 1

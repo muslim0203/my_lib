@@ -1,0 +1,71 @@
+# =============================================================================
+# Docker build kontekstidan chiqariladigan fayllar.
+#
+# NIMA UCHUN KERAK EDI (kritik):
+# docker/php/deploy/Dockerfile da "COPY . /test" bor, .dockerignore esa YO'Q edi.
+# Natijada ishchi katalogdagi .env - JONLI APP_KEY, DB_PASSWORD, JWT_SECRET bilan
+# birga - image QATLAMIGA pishib qolardi. Image qatlamini o'chirib bo'lmaydi:
+# uni registry'ga push qilgan yoki "docker history" ni ko'ra olgan har kim
+# sirlarni o'qiy oladi.
+#
+# Bu fayl FAQAT build konteksti ILDIZ katalog bo'lgan build'larga ta'sir qiladi
+# (ya'ni docker-compose-ci-cd.yml -> php_deploy). nginx/php image'lari
+# docker/nginx va docker/php kontekstlaridan quriladi.
+#
+# ESLATMA: bu mashinada Docker yo'q, shuning uchun "docker build" bilan
+# TEKSHIRA OLMADIM (bajarilmadi: Docker mavjud emas). Sintaksis Docker'ning
+# .gitignore uslubidagi pattern qoidalariga muvofiq yozilgan.
+# =============================================================================
+
+# --- SIRLAR ------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+storage/*.key
+
+# --- VCS / IDE ---------------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+.gitlab-ci.yml
+.idea
+.vscode
+.fleet
+.editorconfig
+
+# --- Bog'liqliklar (image ichida qayta o'rnatiladi) ---------------------------
+vendor
+node_modules
+composer.phar
+
+# --- Foydalanuvchi ma'lumotlari / keshlar ------------------------------------
+storage/app
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+bootstrap/cache
+public/build
+public/hot
+public/storage
+
+# --- Testlar -----------------------------------------------------------------
+# Image ichiga OLINMAYDI. CI da phpunit va phpstan uchun tests/ katalogi
+# docker-compose-ci-cd.yml orqali read-only mount qilinadi
+# (phpstan.neon "tests" ni ham tahlil qiladi).
+tests
+.phpunit.cache
+.phpunit.result.cache
+
+# --- Boshqa ------------------------------------------------------------------
+docker-compose*.yml
+Makefile
+README.md
+npm-debug.log
+yarn-error.log
+*.log
+Homestead.json
+Homestead.yaml

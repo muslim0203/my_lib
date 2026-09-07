@@ -53,8 +53,13 @@ class EmailUserProvider implements UserProvider
      */
     public function retrieveByCredentials(array $credentials): User|Builder|Authenticatable|null
     {
-        if (empty($credentials['email'])) {
-            abort(403, __('client.Credentials must not empty'));
+        // Bu bosqichda hech qanday farqlovchi xato qaytarilmaydi.
+        // Ilgari har bir holat uchun alohida xabar berilardi va bu
+        // qaysi pochta ro'yxatdan o'tganini, qaysi kod amalda ekanini
+        // oshkor qilardi. Kod to'g'riligi validateCredentials ichida,
+        // urinishlar hisobi bilan birga tekshiriladi.
+        if (empty($credentials['email']) || empty($credentials['code'])) {
+            return null;
         }
 
         /**
@@ -62,40 +67,21 @@ class EmailUserProvider implements UserProvider
          */
         $userRepository = app(UserRepository::class);
 
+        $user = $userRepository->findByEmail($credentials['email']);
 
-        if (empty($user = $userRepository->findByEmail($credentials['email']))) {
-            abort(401, __('client.Unauthorized. Email is error'));
+        if (empty($user)) {
+            return null;
         }
 
         if (!$user->isActive()) {
-            abort(401, __('client.Unauthorized. User is not active'));
+            return null;
         }
 
         if ($user->isEmptySocialUser()) {
-            abort(401, __('client.Unauthorized. Social user is not found'));
-        }
-
-        if (empty($credentials['code'])) {
-            abort(401, __('client.Unauthorized. Credentials must not empty'));
-        }
-
-        /**
-         * @var UsersVerifyTokenMailRepository $userVerifyMailTokenRepository
-         */
-        $userVerifyMailTokenRepository = app(UsersVerifyTokenMailRepository::class);
-
-        $userVerifyMailToken = $userVerifyMailTokenRepository->getByTokenAndUserId($user->getId(), $credentials['code']);
-
-        if (!$userVerifyMailToken->isEnable()) {
-            abort(401, __('client.Unauthorized. Code is disabled'));
-        }
-
-        if (!$userVerifyMailToken->isExpiredToken()) {
-            abort(401, __('client.Unauthorized. Code is expired'));
+            return null;
         }
 
         return $user;
-
     }
 
     /**
@@ -105,40 +91,28 @@ class EmailUserProvider implements UserProvider
      */
     public function validateCredentials(Authenticatable $user, array $credentials): bool
     {
-        if (empty($credentials['email'])) {
-            return false;
-        }
-
-        if (!$user->isActive()) {
-            return false;
-        }
-
-        if ($user->isEmptySocialUser()) {
-            return false;
-        }
-
-        if (empty($credentials['code'])) {
+        if (empty($credentials['email']) || empty($credentials['code'])) {
             return false;
         }
 
         /**
          * @var User $user
-         * @var UsersVerifyMailToken $verifyTokenMail
          */
-        $verifyTokenMail = $user->verifyMailToken;
-
-        if (empty($verifyTokenMail)) {
+        if (!$user->isActive() || $user->isEmptySocialUser()) {
             return false;
         }
 
-        if (!$verifyTokenMail->isEnable()) {
-            return false;
-        }
+        /**
+         * @var UsersVerifyTokenMailRepository $userVerifyMailTokenRepository
+         */
+        $userVerifyMailTokenRepository = app(UsersVerifyTokenMailRepository::class);
 
-        if (!$verifyTokenMail->isExpiredToken()) {
-            return false;
-        }
-
-        return $credentials['code'] == $verifyTokenMail->getToken();
+        // Tekshiruv, urinishlar hisobi va bir martalik iste'mol qator
+        // qulfi ostida, bitta amalda bajariladi.
+        return $userVerifyMailTokenRepository->consume(
+            $user->getId(),
+            (string)$credentials['code'],
+            (int)config('auth.mail_code_max_attempts', 5)
+        );
     }
 }

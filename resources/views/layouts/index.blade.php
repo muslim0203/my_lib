@@ -1,31 +1,32 @@
 @php use Illuminate\Support\Facades\Auth;use Illuminate\Support\Facades\Session; @endphp
         <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <base href=""/>
     <title>@yield('title', __('client.Home Page for marketplace'))</title>
     <meta charset="utf-8"/>
-    <meta name="description"
-          content="The most advanced Bootstrap 5 Admin Theme with 40 unique prebuilt layouts on Themeforest trusted by 100,000 beginners and professionals. Multi-demo, Dark Mode, RTL support and complete React, Angular, Vue, Asp.Net Core, Rails, Spring, Blazor, Django, Express.js, Node.js, Flask, Symfony & Laravel versions. Grab your copy now and get life-time updates for free."/>
-    <meta name="keywords"
-          content="metronic, bootstrap, bootstrap 5, angular, VueJs, React, Asp.Net Core, Rails, Spring, Blazor, Django, Express.js, Node.js, Flask, Symfony & Laravel starter kits, admin themes, web design, figma, web development, free templates, free admin themes, bootstrap theme, bootstrap template, bootstrap dashboard, bootstrap dak mode, bootstrap button, bootstrap datepicker, bootstrap timepicker, fullcalendar, datatables, flaticon"/>
+    <meta name="description" content="{{ config('app.name') }}"/>
+    <meta name="robots" content="noindex, nofollow"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta property="og:locale" content="en_US"/>
-    <meta property="og:type" content="article"/>
-    <meta property="og:title"
-          content="Metronic - Bootstrap Admin Template, HTML, VueJS, React, Angular. Laravel, Asp.Net Core, Ruby on Rails, Spring Boot, Blazor, Django, Express.js, Node.js, Flask Admin Dashboard Theme & Template"/>
-    <meta property="og:url" content="https://keenthemes.com/metronic"/>
-    <meta property="og:site_name" content="Keenthemes | Metronic"/>
-    <link rel="canonical" href="https://preview.keenthemes.com/metronic8"/>
+    <meta property="og:locale" content="{{ app()->getLocale() }}"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="{{ config('app.name') }}"/>
+    <meta property="og:url" content="{{ url()->current() }}"/>
+    <meta property="og:site_name" content="{{ config('app.name') }}"/>
+    <link rel="canonical" href="{{ url()->current() }}"/>
     <link rel="shortcut icon" href="{{ asset('assets/media/logos/favicon.ico') }}"/>
     <!--begin::Fonts(mandatory for all pages)-->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700"
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
     <!--end::Fonts-->
     <!--begin::Global Stylesheets Bundle(mandatory for all pages)-->
     <link href="{{ asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css"/>
     <link href="{{ asset('assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css"/>
-    <link rel="stylesheet" href="{{ asset('assets/plugins/global/plugins.bundle.css') }}">
-    <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.2/ckeditor5.css">
+    {{-- CKEditor 5 is loaded from the vendor CDN and is used by the company /
+         question-answer / banner / proverb forms (.ckeditor_content). --}}
+    <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/42.0.2/ckeditor5.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
         .main-container {
             width: 795px;
@@ -115,8 +116,6 @@
 <script src="{{ asset('assets/bundles/jquery-ui/jquery.min.js') }}"></script>
 <script src="{{ asset('assets/js/toastrOptions.js') }}"></script>
 <script src="{{ asset('assets/js/custom/Delete.js') }}"></script>
-<script src="{{asset('assets/plugins/global/plugins.bundle.js')}}"></script>
-<script src="{{asset('assets/js/scripts.bundle.js')}}"></script>
 <!--end::Global Javascript Bundle-->
 <!--begin::Vendors Javascript(used for this page only)-->
 <script src="{{asset('assets/plugins/custom/datatables/datatables.bundle.js')}}"></script>
@@ -239,9 +238,21 @@
 {{--Validation error toast begin--}}
 
 @if(Session::has('errors'))
+    @php
+        $sessionErrors = Session::get('errors');
+
+        if ($sessionErrors instanceof \Illuminate\Support\ViewErrorBag) {
+            $sessionErrors = $sessionErrors->getBag('default');
+        }
+
+        $sessionErrorMessages = $sessionErrors instanceof \Illuminate\Contracts\Support\MessageBag
+            ? $sessionErrors->getMessages()
+            : (is_array($sessionErrors) ? $sessionErrors : []);
+    @endphp
     <script>
         $(function () {
-            var errors = <?= Session::get('errors'); ?>;
+            // Encoded server side as JSON: quotes, backticks and </script> are escaped.
+            var errors = @json((object) $sessionErrorMessages);
 
             for (const [key, value] of Object.entries(errors)) {
                 toastr.error(`${key} - ${value}`);
@@ -256,7 +267,7 @@
 @if(Session::has('success'))
     <script>
         $(function () {
-            var success = `<?= Session::get('success'); ?>`;
+            var success = @json((string) Session::get('success'));
 
             toastr.success(success);
 
@@ -269,7 +280,7 @@
 @if(Session::has('exception'))
     <script>
         $(function () {
-            var exception = `<?= Session::get('exception'); ?>`;
+            var exception = @json((string) Session::get('exception'));
 
             toastr.error(exception);
         });

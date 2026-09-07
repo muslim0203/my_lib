@@ -3,6 +3,7 @@
 namespace App\Core\Repository\Product;
 
 use App\Core\Enums\Pay\PaymentTypeEnum;
+use App\Models\Products\Product;
 use App\Models\Products\ProductsOrder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +32,34 @@ class ProductsOrderRepository
         return ProductsOrder::query()->where('product_id', $product_id)
             ->where('customer_id', $user_id)
             ->exists();
+    }
+
+    /**
+     * Foydalanuvchining mahsulot kontentiga haqiqiy huquqi bormi.
+     *
+     * Order mavjudligining o'zi yetarli emas: pullik mahsulot uchun order
+     * to'lov tizimi (payme/click) orqali yaratilgan bo'lishi shart. Bu
+     * eskirgan yoki noto'g'ri yaratilgan `free` orderlarni ham bloklaydi.
+     *
+     * @param Product $product
+     * @param int $user_id
+     * @return bool
+     */
+    public function hasEntitlement(Product $product, int $user_id): bool
+    {
+        $query = ProductsOrder::query()
+            ->where('product_id', $product->getId())
+            ->where('customer_id', $user_id)
+            ->where('enabled', true);
+
+        if (!$product->isFree()) {
+            $query->whereIn('payment_type', [
+                PaymentTypeEnum::TYPE_PAYME->value,
+                PaymentTypeEnum::TYPE_CLICK->value,
+            ]);
+        }
+
+        return $query->exists();
     }
 
     /**

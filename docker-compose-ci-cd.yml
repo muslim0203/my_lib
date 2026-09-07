@@ -1,4 +1,10 @@
-version: "3.8"
+# =============================================================================
+# CI uchun bir martalik konteyner (GitLab runner ishlatadi).
+# Faqat statik tahlil va testlar uchun; SERVERGA HECH QACHON DEPLOY QILINMAYDI.
+#
+# "version:" kaliti olib tashlandi - Compose V2 da u eskirgan va har chaqiruvda
+# ogohlantirish chiqaradi.
+# =============================================================================
 
 services:
   php_deploy:
@@ -6,3 +12,28 @@ services:
       context: .
       dockerfile: docker/php/deploy/Dockerfile
     working_dir: /test
+    volumes:
+      # tests/ .dockerignore orqali image'dan chiqarilgan (u yerda .env kabi
+      # narsalar bilan bir kontekstda edi). Lekin phpunit ham, phpstan ham
+      # (phpstan.neon paths: - tests) unga muhtoj -> read-only mount qilamiz.
+      - './tests:/test/tests:ro'
+      - './phpunit.xml:/test/phpunit.xml:ro'
+      - './phpstan.neon:/test/phpstan.neon:ro'
+    environment:
+      # .env image ichiga OLINMAYDI (.dockerignore), shuning uchun testlar uchun
+      # ATAYIN TASHLAB YUBORILADIGAN kalit. Bu SIR EMAS: matni ochiq-oydin
+      # "ci-test-only-key-not-a-secret-32" ning base64 ko'rinishi va u faqat shu
+      # tarmoqsiz (network_mode: none) CI konteynerida ishlatiladi.
+      # PRODUCTION APP_KEY hech qachon CI ga ham, image ga ham kirmasligi kerak.
+      APP_KEY: "base64:Y2ktdGVzdC1vbmx5LWtleS1ub3QtYS1zZWNyZXQtMzI="
+      # Testlar hech qanday tashqi xizmatga tegmasin.
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      # phpunit.xml o'zi ham shu qiymatlarni beradi; bu ikkilangan himoya.
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+      TELESCOPE_ENABLED: "false"
+    # Bu konteyner hech qanday tarmoqqa ulanmaydi va port ochmaydi.
+    network_mode: none

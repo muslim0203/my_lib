@@ -13,6 +13,8 @@ class MailService implements MailInterface
 {
     private ?SentMessage $sentMessage = null;
 
+    private ?string $hashedCode = null;
+
     public function __construct(
         public readonly int $code,
         protected VerifyMail   $verifyMail
@@ -45,7 +47,9 @@ class MailService implements MailInterface
      */
     public function getHashCode(): string
     {
-        return Hash::make((string)$this->code);
+        // Hash::make har chaqiruvda boshqa natija beradi, shuning uchun
+        // bir marta hisoblanib eslab qolinadi.
+        return $this->hashedCode ??= Hash::make((string)$this->code);
     }
 
     /**

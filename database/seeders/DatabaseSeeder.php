@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Rollar/huquqlar admin yaratilishidan oldin mavjud bo'lishi kerak.
+            PermissionSeeder::class,
             AdminUserSeeder::class,
             EducationTypeSeeder::class,
             ProcessStepSeeder::class,

@@ -144,6 +144,28 @@ return [
     'driver_phone' => env('AUTHENTICATION_PROVIDER_GOOGLE', 'phone'),
     'driver_admin' => env('AUTHENTICATION_PROVIDER_ADMIN', 'admin'),
 
-    'mail_code_expire' => env('MAIL_CODE_EXPIRE_AT'),
+    /*
+     * OTP kodining amal qilish muddati (daqiqa). Ilgari standart qiymat
+     * yo'q edi: env o'rnatilmaganda addMinutes(null) muddatni darhol
+     * tugagan qilib qo'yardi.
+     */
+    'mail_code_expire' => (int)env('MAIL_CODE_EXPIRE_AT', 5),
+
+    /*
+     * Bitta kod uchun ruxsat etilgan noto'g'ri urinishlar soni.
+     * Chegaraga yetganda kod bekor qilinadi.
+     */
+    'mail_code_max_attempts' => (int)env('MAIL_CODE_MAX_ATTEMPTS', 5),
+
+    /*
+     * Birinchi admin hisobini yaratish uchun sozlamalar. Parol faqat shu
+     * yerdan olinadi; u bo'sh bo'lsa seeder to'xtaydi va hech qanday
+     * admin yaratilmaydi. Mavjud admin hech qachon qayta yozilmaydi.
+     */
+    'admin_initial' => [
+        'username' => env('ADMIN_INITIAL_USERNAME', 'admin'),
+        'email' => env('ADMIN_INITIAL_EMAIL'),
+        'password' => env('ADMIN_INITIAL_PASSWORD'),
+    ],
 
 ];

@@ -45,9 +45,11 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            //\Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-//            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
-            \Illuminate\Session\Middleware\StartSession::class,
+            // JWT API stateless. StartSession bu yerdan olib tashlandi:
+            // har bir API so'roviga sessiya cookie'si berilishi keraksiz
+            // edi va yagona sessiya iste'molchisi (LoginAndPasswordService)
+            // faqat `web` guruhidagi admin login oqimida ishlatiladi.
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             LocalizationMiddleware::class,
             SetApiGuard::class

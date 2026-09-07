@@ -1,5 +1,32 @@
+# =============================================================================
+# marketplace CI/CD  (B5 bo'yicha qayta ishlangan)
+#
+# Asosiy o'zgarishlar:
+#   1. TEST bosqichi qo'shildi - phpunit haqiqatan ishlaydi va yiqilsa
+#      pipeline'ni TO'XTATADI (ilgari umuman test yo'q edi).
+#   2. Statik tahlil (larastan) endi 'main' GA ham, 'pre-master' GA ham
+#      yo'naltirilgan MR'larda ishlaydi (ilgari faqat pre-master).
+#   3. composer install -> composer install --no-dev --optimize-autoloader
+#      (ilgari Telescope/Ignition/PHPUnit/Faker SERVERGA CHIQARDI).
+#   4. Deploy'dan keyin config/route/view cache + storage:link + opcache reload.
+#   5. "run-seeder-prod" (bir bosishda prod'ni seed qilish tugmasi) O'CHIRILDI.
+#   6. Migratsiyalar avvalgidek --force va MANUAL.
+#
+# SIRLAR: bu faylda hech qanday parol/kalit yo'q va log'ga chiqarilmaydi.
+# Serverdagi .env fayl runner tomonidan TEGILMAYDI: rsync --filter=':- .gitignore'
+# uni chiqarib tashlaydi, chunki .env .gitignore da. Kerakli qiymatlar GitLab
+# CI/CD Variables (masked + protected) da saqlanishi kerak.
+#
+# TARMOQ VA VOLUME'LAR (B5): docker-compose*.yml da "networks.marketplace"
+# external, ya'ni u OLDINDAN mavjud bo'lishi kerak. Endi qo'lda emas -
+# serverda bir marta "make init" bajariladi (Makefile ga qarang).
+#
+# ROLLBACK PROTSEDURASI: docker/ROLLBACK.md
+# =============================================================================
+
 stages:
   - code_analyze
+  - test
   - deploy_dev
   - deploy_prod
   - composer_install
@@ -7,6 +34,11 @@ stages:
   - run_seeder
   - clear_cache
 
+# =============================================================================
+# 1. KOD TAHLILI
+# =============================================================================
+
+# 'main' ga faqat 'pre-master' dan MR ochilishi mumkin (release oqimi).
 main-merge-request-check:
   stage: code_analyze
   script:
@@ -16,15 +48,41 @@ main-merge-request-check:
   tags:
     - marketplace
 
+# B5: ilgari bu job FAQAT pre-master ga MR'larda ishlardi, ya'ni
+# pre-master -> main MR'i STATIK TAHLILSIZ o'tib ketardi.
 larastan-check:
   stage: code_analyze
   script:
-    - docker compose -f docker-compose-ci-cd.yml run --rm --build php_deploy ./vendor/bin/phpstan analyse --memory-limit=1G
+    - docker compose -f docker-compose-ci-cd.yml run --rm --build php_deploy ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'pre-master'
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^(main|pre-master)$/
   tags:
     - marketplace
 
+# =============================================================================
+# 2. TESTLAR  (B5: butunlay yangi bosqich)
+# =============================================================================
+# Bu job MUVAFFAQIYATSIZ bo'lsa pipeline TO'XTAYDI:
+#   - "allow_failure" YO'Q (default = false),
+#   - "when: manual" YO'Q,
+#   - phpunit noldan farqli exit code qaytarsa, "docker compose run" ham
+#     o'sha kodni qaytaradi va job "failed" bo'ladi.
+# Deploy job'lari keyingi stage'larda, ya'ni test yiqilsa ular UMUMAN
+# yaratilmaydi (GitLab stage'larni ketma-ket bajaradi).
+phpunit:
+  stage: test
+  script:
+    - docker compose -f docker-compose-ci-cd.yml run --rm --build php_deploy ./vendor/bin/phpunit --colors=never --testdox
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+  tags:
+    - marketplace
+
+# =============================================================================
+# 3. DEPLOY - DEV (pre-master)
+# =============================================================================
 deploy-to-dev:
   stage: deploy_dev
   script:
@@ -37,7 +95,9 @@ deploy-to-dev:
 composer-install:
   stage: composer_install
   script:
-    - docker exec marketplace_php_cli composer install
+    # B5: --no-dev - dev-bog'liqliklar (telescope, ignition, phpunit, faker)
+    # serverga TUSHMASIN. --optimize-autoloader - classmap oldindan quriladi.
+    - docker exec marketplace_php_cli composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
   rules:
     - if: $CI_COMMIT_BRANCH == 'pre-master'
   tags:
@@ -54,27 +114,39 @@ run-migration:
     - marketplace
   when: manual
 
+# DEV uchun seeder saqlandi - bu stendda ma'lumot yo'qolishi qabul qilinadi.
 run-seeder:
   stage: run_seeder
   script:
-    - docker exec marketplace_php_cli php artisan db:seed
+    - docker exec marketplace_php_cli php artisan db:seed --force
   rules:
     - if: $CI_COMMIT_BRANCH == 'pre-master'
   tags:
     - marketplace
   when: manual
 
-app=clear-cache:
+# B5: ilgari bu faqat "optimize:clear + cache:clear" edi, ya'ni deploy'dan keyin
+# HECH QANDAY kesh QURILMASDI. Endi tozalash + QAYTA QURISH + storage:link.
+app-optimize:
   stage: clear_cache
   script:
     - docker exec marketplace_php_cli php artisan optimize:clear
-    - docker exec marketplace_php_cli php artisan cache:clear
+    - docker exec marketplace_php_cli php artisan config:cache
+    - docker exec marketplace_php_cli php artisan route:cache
+    - docker exec marketplace_php_cli php artisan view:cache
+    # public/storage simlink: rsync --delete-after uni o'chirib yuborishi mumkin.
+    - docker exec marketplace_php_cli php artisan storage:link --force
+    # Navbat ishchilariga "yangi kod keldi, qayta ishga tushing" signali.
+    - docker exec marketplace_php_cli php artisan queue:restart
   tags:
     - marketplace
   rules:
     - if: $CI_COMMIT_BRANCH == 'pre-master'
   when: manual
 
+# =============================================================================
+# 4. DEPLOY - PROD (main)
+# =============================================================================
 deploy-to-prod:
   stage: deploy_prod
   script:
@@ -88,7 +160,7 @@ deploy-to-prod:
 composer-install-prod:
   stage: composer_install
   script:
-    - docker exec marketplace_php_cli composer install
+    - docker exec marketplace_php_cli composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
   rules:
     - if: $CI_COMMIT_BRANCH == 'main'
   tags:
@@ -98,6 +170,7 @@ composer-install-prod:
 run-migration-prod:
   stage: run_migration
   script:
+    # --force: production'da tasdiq so'ramasin. "when: manual" ATAYIN saqlandi.
     - docker exec marketplace_php_cli php artisan migrate --force
   rules:
     - if: $CI_COMMIT_BRANCH == 'main'
@@ -105,21 +178,38 @@ run-migration-prod:
     - marketplace_prod
   when: manual
 
-run-seeder-prod:
-  stage: run_seeder
-  script:
-    - docker exec marketplace_php_cli php artisan db:seed
-  rules:
-    - if: $CI_COMMIT_BRANCH == 'main'
-  tags:
-    - marketplace_prod
-  when: manual
+# -----------------------------------------------------------------------------
+# B5: "run-seeder-prod" JOB'I O'CHIRILDI.
+#
+# Sabab: u bir bosishda production bazasida "php artisan db:seed" ni ishga
+# tushirardi. database/seeders/DatabaseSeeder.php 15 ta seeder'ni chaqiradi
+# (AdminUserSeeder, CategorySeeder, NotificationSeeder ...) va ularning
+# idempotent ekanligi ISBOTLANMAGAN - takroriy ishga tushirish dublikat
+# yozuvlar yaratishi yoki mavjud ma'lumot ustiga yozishi mumkin.
+# Bunday operatsiya CI tugmasi emas, nazorat ostidagi o'zgarish bo'lishi kerak.
+#
+# Production'ga ma'lumot qo'shish kerak bo'lsa:
+#   - uni MIGRATION sifatida yozing (tarixda qoladi, rollback bor), YOKI
+#   - operator qo'lda, zaxira nusxa olgandan keyin, ANIQ bitta idempotent
+#     seeder klassini ishga tushirsin:
+#         docker exec marketplace_php_cli php artisan db:seed \
+#             --class='Database\Seeders\ProductStatusSeeder' --force
+#     (avval pg_dump bilan backup - docker/ROLLBACK.md)
+# -----------------------------------------------------------------------------
 
-app=clear-cache-prod:
+app-optimize-prod:
   stage: clear_cache
   script:
     - docker exec marketplace_php_cli php artisan optimize:clear
-    - docker exec marketplace_php_cli php artisan cache:clear
+    - docker exec marketplace_php_cli php artisan config:cache
+    - docker exec marketplace_php_cli php artisan route:cache
+    - docker exec marketplace_php_cli php artisan view:cache
+    - docker exec marketplace_php_cli php artisan storage:link --force
+    - docker exec marketplace_php_cli php artisan queue:restart
+    # B6: production php.ini da opcache.validate_timestamps=0. Ya'ni FPM
+    # diskdagi yangi kodni O'ZI KO'RMAYDI. USR2 = graceful reload:
+    # joriy so'rovlar tugaydi, keyin worker'lar yangi opcache bilan ko'tariladi.
+    - docker exec marketplace_php_fpm kill -USR2 1
   tags:
     - marketplace_prod
   rules:

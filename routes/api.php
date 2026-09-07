@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\Enums\ProductGenreController;
 use App\Http\Controllers\Api\Enums\ProductTagController;
 use App\Http\Controllers\Api\Enums\ProductTypeController;
 use App\Http\Controllers\Api\FileManager\FileManagerController;
+use App\Http\Controllers\Api\FileManager\FileViewController;
 use App\Http\Controllers\Api\Links\LinkAuthorSubscriberController;
 use App\Http\Controllers\Api\MainBanner\MainBannerController;
 use App\Http\Controllers\Api\Notification\NotificationController;
@@ -48,10 +49,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::controller(AuthController::class)
     ->group(function () {
 
+        // OTP chiqarish va tekshirish - spam, enumeratsiya va kodni
+        // taxminlashning asosiy yo'llari. Bu yerda IP/qabul qiluvchi
+        // bo'yicha cheklov qo'llaniladi.
         Route::post('auth/login-by-email', 'loginByEmail')
+            ->middleware('throttle:otp-verify')
             ->name('auth.login-by-email');
 
         Route::post('auth/send-token-to-mail', 'sendTokenToMail')
+            ->middleware('throttle:otp-send')
             ->name('auth.send-token-to-mail');
 
         Route::get('auth/login-by-google', 'loginByGoogle')
@@ -66,12 +72,20 @@ Route::controller(AuthController::class)
         Route::get('auth/refresh-token', 'refreshToken')
             ->name('auth.refresh-token');
 
-        Route::get('auth/logout', 'logout')
-            ->middleware(['jwt.verify'])
-            ->name('auth.logout');
-
     })
     ->middleware('guest');
+
+// logout autentifikatsiyani talab qiladi, shuning uchun `guest`
+// guruhida tura olmaydi: u yerda RedirectIfAuthenticated tokeni bor
+// foydalanuvchini `/` ga yo'naltirib, marshrutga yetib bormas edi.
+Route::controller(AuthController::class)
+    ->middleware(['jwt.verify'])
+    ->group(function () {
+
+        Route::get('auth/logout', 'logout')
+            ->name('auth.logout');
+
+    });
 
 Route::controller(UserController::class)
     ->middleware('jwt.verify')
@@ -217,7 +231,10 @@ Route::controller(ProductController::class)
             ->withoutMiddleware(['jwt.verify'])
             ->name('product.favorite-list');
 
-        Route::get('product/buy/{id}', 'buy')
+        // Bepul egallash order yaratadi, ya'ni holatni o'zgartiradi.
+        // GET holatni o'zgartirmasligi kerak; eski GET havolasi endi
+        // 405 qaytaradi va hech qanday order yaratmaydi.
+        Route::post('product/buy/{id}', 'buy')
             ->name('product.buy');
 
         Route::get('product/my-list', 'myList')
@@ -389,30 +406,8 @@ Route::controller(ReportController::class)
 
     });
 
-Route::controller(ProverbController::class)
-    ->group(function () {
-
-        Route::get('proverb/list', 'list')
-            ->name('proverb.list');
-
-    });
-
-Route::get('file-view/{filename}', function ($filename, Request $request) {
-    $path = storage_path("app/public/{$filename}");
-
-    if (!file_exists($path)) {
-        abort(404, 'File is not found!');
-    }
-
-    // User-Agent orqali faqat brauzerlar uchun ruxsat berish
-    if (!str_contains($request->header('User-Agent'), 'Mozilla')) {
-        return response()->json(['error' => 'File permission denied!'], 403);
-    }
-
-    return response()->file($path, [
-        'Content-Type' => mime_content_type($path),
-        'Content-Disposition' => 'inline', // Faqat ochish, yuklab olish yo‘q
-        'X-Frame-Options' => 'SAMEORIGIN',
-        'X-Content-Type-Options' => 'nosniff'
-    ]);
-})->name('file-view');
+// Fayllar avtorizatsiyadan o'tgan yagona nuqta orqali beriladi.
+// Eski implementatsiya yo'lni birlashtirar (path traversal) va
+// User-Agent'dagi "Mozilla" so'zini avtorizatsiya deb qabul qilardi.
+Route::get('file-view/{filename}', FileViewController::class)
+    ->name('file-view');

@@ -59,6 +59,25 @@ class RequestRepository
             ->firstOrFail();
     }
 
+    /**
+     * Arizani faqat egasi uchun oladi.
+     *
+     * Cheklov so'rov darajasida qo'yiladi: begona ariza umuman
+     * topilmaydi, shuning uchun uni o'qib ham, tahrirlab ham,
+     * o'zlashtirib ham bo'lmaydi. UI'da yashirishga tayanilmaydi.
+     *
+     * @param int $id
+     * @param int $author_id
+     * @return Builder|Request
+     */
+    public function getOwned(int $id, int $author_id): Request|Builder
+    {
+        return Request::query()
+            ->where('id', $id)
+            ->where('author_id', $author_id)
+            ->firstOrFail();
+    }
+
     public function getData(int $id): mixed
     {
         $data = Request::query()->where('id', $id)->firstOrFail();

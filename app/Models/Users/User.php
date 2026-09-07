@@ -15,6 +15,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 /**
@@ -38,7 +39,17 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
  */
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    /**
+     * Admin paneli `web` guard ostida ishlaydi, shuning uchun rollar va
+     * huquqlar shu guard nomi bilan tekshiriladi. Bu qiymat bo'lmasa
+     * spatie modelga bog'langan barcha guardlardan birinchisini tanlaydi
+     * (mail/google/phone ham `User` modeliga bog'langan).
+     *
+     * @var string
+     */
+    protected string $guard_name = 'web';
 
     /**
      * The attributes that are mass assignable.

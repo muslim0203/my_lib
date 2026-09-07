@@ -123,19 +123,17 @@ class RegisterService implements RegisterInterface
             abort(400, __('client.User is not found'));
         }
 
-        $userVerifyTokenMail = $this->usersVerifyTokenMailRepository->getByTokenAndUserId(
+        // Kod hash ko'rinishida saqlanadi, shuning uchun uni token
+        // bo'yicha qidirib bo'lmaydi. Tekshiruv, urinishlar hisobi va
+        // bir martalik iste'mol atomar `consume()` ichida bajariladi.
+        $isValid = $this->usersVerifyTokenMailRepository->consume(
             $user->getId(),
-            (string)$verifyMailTokenRequest->post('token')
+            (string)$verifyMailTokenRequest->post('token'),
+            (int)config('auth.mail_code_max_attempts', 5)
         );
 
-        if (!$userVerifyTokenMail->isExpiredToken()) {
+        if (!$isValid) {
             abort(400, __('client.Token is expired'));
-        }
-
-        $user = $userVerifyTokenMail->user;
-
-        if (empty($user)) {
-            abort(404, __('client.User is not found'));
         }
 
         $user->setStatus(UserStatusEnum::_ACTIVE->value);

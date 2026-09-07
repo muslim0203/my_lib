@@ -79,7 +79,7 @@ class AuthorRegisterService implements Register
             abort(400, __('client.This action is not permit.'));
         }
 
-        $request = is_null($id) ? new Request() : $requestRepository->get($id);
+        $request = is_null($id) ? new Request() : $requestRepository->getOwned($id, $user->getId());
 
         if (!empty($id) && !$request->isIsEditable()) {
             throw new BadRequestHttpException(__('client.Request doesnt editable'));

@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Psy\Util\Json;
@@ -264,11 +265,21 @@ class ProductService implements ProductContract
     }
 
     /**
+     * Bepul mahsulotni egallash.
+     *
+     * Faqat haqiqatan bepul mahsulotlar uchun ishlaydi. Pullik mahsulot bu
+     * yerdan hech qanday holatda order olmaydi - pullik kontent huquqi faqat
+     * Payme yoki Click callback'i tasdiqlagan to'lov orqali beriladi.
+     *
      * @param int $id
      * @return void
      */
     public function buy(int $id): void
     {
+        if (!Auth::check()) {
+            abort(403, __('client.Unauthorized'));
+        }
+
         /**
          * @var ProductRepository $productRepository
          */
@@ -276,10 +287,9 @@ class ProductService implements ProductContract
 
         $product = $productRepository->getById($id);
 
-        if (!Auth::check()) {
-            abort(403, __('client.Unauthorized'));
+        if (!$product->isFree()) {
+            abort(403, __('client.Payment is required for this product'));
         }
-
 
         /**
          * @var User $user
@@ -299,14 +309,22 @@ class ProductService implements ProductContract
          * @var ProductsOrderService $productsOrderService
          */
         $productsOrderService = app(ProductsOrderService::class);
-        $productsOrderService->create(
-            $product->getId(),
-            PaymentTypeEnum::TYPE_FREE->value,
-            Str::random(30), $user->getId(),
-            0,
-            0,
-            0
-        );
+
+        try {
+            $productsOrderService->create(
+                $product->getId(),
+                PaymentTypeEnum::TYPE_FREE->value,
+                Str::random(30),
+                $user->getId(),
+                0,
+                0,
+                0
+            );
+        } catch (UniqueConstraintViolationException) {
+            // products_orders(product_id, customer_id) unique cheklovi bir vaqtda
+            // kelgan takroriy so'rovlarni baza darajasida to'xtatadi.
+            abort(400, __('client.Product already ordered'));
+        }
     }
 
     /**

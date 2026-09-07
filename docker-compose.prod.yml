@@ -1,0 +1,299 @@
+# =============================================================================
+# marketplace - PRODUCTION compose (M5)
+#
+# Ishlatish:
+#     docker compose -f docker-compose.prod.yml up -d
+#
+# -----------------------------------------------------------------------------
+# 1. BU FAYL NIMANI O'Z ICHIGA OLADI VA NIMANI OLMAYDI
+# -----------------------------------------------------------------------------
+# ICHIDA (default holatda ishga tushadi):
+#     nginx      - HTTP front (faqat plain HTTP, TLS oldindagi terminatorda)
+#     php        - PHP-FPM (production php.ini + tuzatilgan pool)
+#     queue      - "artisan queue:work" navbat ishchisi        <-- ILGARI YO'Q EDI
+#     scheduler  - "artisan schedule:work" rejalashtiruvchi    <-- ILGARI YO'Q EDI
+#
+# ICHIDA EMAS (DEFAULT holatda ISHGA TUSHMAYDI):
+#     database (PostgreSQL) va rabbitmq.
+#     KUTILADI: bular TASHQI, boshqariladigan (managed) xizmatlar bo'lsin va
+#     .env dagi DB_HOST / RABBITMQ_HOST ular manziliga ishora qilsin.
+#     Sabab: bitta tugunli compose-Postgres da zaxira nusxa (backup), PITR va
+#     failover yo'q; volume hayoti esa ilova deploy'iga bog'lanib qoladi.
+#
+#     >>> OPERATOR UCHUN OGOHLANTIRISH <<<
+#     .env.example da hozircha DB_HOST=database va RABBITMQ_HOST=rabbitmq turibdi
+#     (bular compose SERVIS NOMLARI). Agar tashqi xizmatlarga o'tsangiz, prod
+#     serverdagi .env da ularni HAQIQIY host nomiga almashtirish SHART.
+#
+#     Agar boshqariladigan xizmat YO'Q bo'lsa va DB/broker shu hostda turishi
+#     kerak bo'lsa - ular "selfhosted" profil ostida shu faylda MAVJUD:
+#         docker compose -f docker-compose.prod.yml --profile selfhosted up -d
+#     Bu holda DB_HOST=database, RABBITMQ_HOST=rabbitmq to'g'ri bo'ladi.
+#
+# -----------------------------------------------------------------------------
+# 2. KOD QAYERDAN KELADI
+# -----------------------------------------------------------------------------
+# Deploy .gitlab-ci.yml dagi rsync orqali /var/www/marketplace/backend ga
+# tushadi va shu katalog konteynerlarga bind-mount qilinadi (image ichiga
+# "pishirilmaydi"). Shuning uchun "./" mount saqlandi.
+#
+# -----------------------------------------------------------------------------
+# 3. TARMOQ VA VOLUME
+# -----------------------------------------------------------------------------
+# Birinchi marta:  make init   (docker network create marketplace + volume'lar)
+# Rollback:        docker/ROLLBACK.md
+# =============================================================================
+
+services:
+
+    nginx:
+        container_name: marketplace_nginx
+        build:
+            context: docker/nginx
+            dockerfile: Dockerfile
+        restart: always
+        ports:
+            # Default ATAYIN loopback: TLS terminatori (host nginx / HAProxy /
+            # bulut LB) shu portga proxy qiladi. Konteynerni to'g'ridan-to'g'ri
+            # internetga chiqarish uchun .env da APP_HTTP_BIND=0.0.0.0:80 qiling
+            # - lekin u holda HTTPS ni oldinda ta'minlash MAJBURIY.
+            - "${APP_HTTP_BIND:-127.0.0.1:9090}:80"
+        volumes:
+            - './:/var/www/app:ro'
+            - './docker/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro'
+            - './docker/nginx/config/default.conf:/etc/nginx/conf.d/default.conf:ro'
+        healthcheck:
+            test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/nginx-health || exit 1" ]
+            interval: 15s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        depends_on:
+            php:
+                condition: service_healthy
+        # nginx SIGQUIT bilan graceful to'xtaydi (joriy so'rovlarni tugatib).
+        stop_signal: SIGQUIT
+        stop_grace_period: 30s
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+    php:
+        container_name: marketplace_php_fpm
+        build:
+            context: docker/php
+            dockerfile: fpm/Dockerfile
+        restart: always
+        # "ports:" YO'Q - 9000 faqat docker tarmog'i ichida (B1).
+        volumes:
+            - './:/var/www/app'
+            # B6: DEV emas, PRODUCTION php.ini.
+            - './docker/php/fpm/config/php.ini-production:/usr/local/etc/php/php.ini:ro'
+            - './docker/php/pool.d/www.conf-local:/usr/local/etc/php-fpm.d/www.conf:ro'
+        working_dir: /var/www/app
+        healthcheck:
+            test: [ "CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong" ]
+            interval: 15s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+        # FPM ga SIGQUIT = graceful: yangi so'rov qabul qilmaydi, joriylarini
+        # tugatadi. Default SIGTERM esa FPM uchun DARHOL to'xtash (so'rovlar uziladi).
+        stop_signal: SIGQUIT
+        # request_terminate_timeout = 90s -> 90 dan katta qiymat.
+        stop_grace_period: 100s
+        deploy:
+            resources:
+                limits:
+                    # pool.d/www.conf-local dagi arifmetikadagi 2 GB FARAZINI
+                    # shu yerda aniq chegaraga aylantiramiz. Operator RAM
+                    # byudjetini o'zgartirsa, IKKALA joyni ham yangilash kerak.
+                    memory: 2g
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+    # -------------------------------------------------------------------------
+    # M5: NAVBAT ISHCHISI - ilgari umuman yo'q edi.
+    # .env.example da QUEUE_CONNECTION=rabbitmq, ya'ni hech kim job'larni
+    # bajarmasa ular navbatda abadiy yotib qolardi.
+    # -------------------------------------------------------------------------
+    queue:
+        container_name: marketplace_queue
+        build:
+            context: docker/php
+            dockerfile: cli/Dockerfile
+        restart: always
+        volumes:
+            - './:/var/www/app'
+            - './docker/php/cli/config/php.ini-production:/usr/local/etc/php/php.ini:ro'
+        working_dir: /var/www/app
+        # --max-time=3600  : har soatda ishchi o'zini toza qayta ishga tushiradi
+        #                    (xotira sizishiga qarshi; restart:always ko'taradi).
+        # --timeout=60     : bitta job uchun chegara.
+        # --tries=3        : muvaffaqiyatsiz job 3 marta urinadi, keyin failed_jobs.
+        # --sleep=3        : navbat bo'sh bo'lsa 3s kutadi.
+        command: >
+            php artisan queue:work
+            --queue=default
+            --tries=3
+            --timeout=60
+            --sleep=3
+            --max-time=3600
+            --no-interaction
+        healthcheck:
+            # procps cli/Dockerfile da o'rnatilgan.
+            test: [ "CMD-SHELL", "pgrep -f 'artisan queue:work' > /dev/null || exit 1" ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+        # GRACEFUL SHUTDOWN: Laravel queue:work SIGTERM ni ushlaydi va JORIY
+        # JOB TUGAGANDAN KEYIN to'xtaydi. Grace period job timeout'idan (60s)
+        # katta bo'lishi SHART, aks holda docker SIGKILL yuborib job'ni yarim
+        # yo'lda uzib qo'yadi.
+        stop_signal: SIGTERM
+        stop_grace_period: 90s
+        depends_on:
+            php:
+                condition: service_healthy
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+    # -------------------------------------------------------------------------
+    # M5: SCHEDULER - ilgari umuman yo'q edi.
+    #
+    # IKKI MARTA BAJARILISHINING OLDINI OLISH:
+    #  1) Bu servis FAQAT BITTA nusxada ishlashi kerak. "deploy.replicas" ATAYIN
+    #     qo'yilmagan va uni 1 dan oshirish TAQIQLANADI. Shuningdek prod compose
+    #     bir nechta hostda parallel ishlatilsa, scheduler FAQAT BITTA hostda
+    #     yoqilishi kerak.
+    #  2) Host tizimida ALOHIDA cron ("* * * * * php artisan schedule:run")
+    #     BO'LMASLIGI kerak - aks holda har daqiqa ikki marta bajariladi.
+    #     Tekshiring:  crontab -l ; ls /etc/cron.d/
+    #  3) Ilova darajasida vazifalarga ->withoutOverlapping() qo'shish tavsiya
+    #     etiladi (routes/console.php - boshqa ishchining mas'uliyati).
+    #     ->onOneServer() esa UMUMIY cache (redis/database) talab qiladi;
+    #     .env.example da CACHE_DRIVER=file, ya'ni u HOZIR ISHLAMAYDI.
+    #
+    # "schedule:work" - konteyner uchun to'g'ri variant: u protsess ichida har
+    # daqiqada schedule:run chaqiradi, cron daemon kerak emas.
+    # -------------------------------------------------------------------------
+    scheduler:
+        container_name: marketplace_scheduler
+        build:
+            context: docker/php
+            dockerfile: cli/Dockerfile
+        restart: always
+        volumes:
+            - './:/var/www/app'
+            - './docker/php/cli/config/php.ini-production:/usr/local/etc/php/php.ini:ro'
+        working_dir: /var/www/app
+        command: php artisan schedule:work --no-interaction
+        healthcheck:
+            test: [ "CMD-SHELL", "pgrep -f 'artisan schedule:work' > /dev/null || exit 1" ]
+            interval: 60s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+        stop_signal: SIGTERM
+        stop_grace_period: 60s
+        depends_on:
+            php:
+                condition: service_healthy
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+    # -------------------------------------------------------------------------
+    # IXTIYORIY: o'z hostingizda DB/broker.
+    # Faqat "--profile selfhosted" bilan ishga tushadi. Default holatda YO'Q.
+    # -------------------------------------------------------------------------
+    database:
+        container_name: marketplace_db
+        image: postgres:16.1-alpine
+        restart: always
+        profiles:
+            - selfhosted
+        # Port HOSTGA CHIQARILMAYDI (B2).
+        volumes:
+            - 'marketplace:/var/lib/postgresql/data'
+            - './docker/database/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro'
+        command: >
+            postgres
+            -c hba_file=/etc/postgresql/pg_hba.conf
+            -c password_encryption=scram-sha-256
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE .env da belgilanishi shart}
+            POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME .env da belgilanishi shart}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env da belgilanishi shart}
+            POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=trust"
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+            interval: 10s
+            timeout: 5s
+            retries: 6
+            start_period: 30s
+        stop_grace_period: 60s
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+    rabbitmq:
+        container_name: marketplace_rabbitmq
+        image: rabbitmq:3.13-management-alpine
+        restart: always
+        profiles:
+            - selfhosted
+        environment:
+            - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:?RABBITMQ_USER .env da belgilanishi shart}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD .env da belgilanishi shart}
+        # AMQP porti (5672) HOSTGA CHIQARILMAYDI - faqat docker tarmog'i ichida.
+        # Management UI (15672) ham chiqarilmaydi; kerak bo'lsa SSH tunnel:
+        #     ssh -L 15672:127.0.0.1:15672 <server>
+        #     docker compose -f docker-compose.prod.yml exec rabbitmq ...
+        volumes:
+            - 'rabbitmq:/var/lib/rabbitmq'
+        healthcheck:
+            test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 40s
+        stop_grace_period: 60s
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "5"
+        networks:
+            - marketplace
+
+volumes:
+    marketplace:
+    rabbitmq:
+
+networks:
+    marketplace:
+        external: true

@@ -9,6 +9,7 @@ use App\Models\Users\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class ReportFilterByBooks
 {
@@ -19,7 +20,7 @@ class ReportFilterByBooks
     public static function search(FormRequest $formRequest): LengthAwarePaginator
     {
         if (!Auth::check()) {
-            abort(__('client.User is not logged in.'));
+            abort(ResponseAlias::HTTP_UNAUTHORIZED, __('client.User is not logged in.'));
         }
 
         /**
@@ -28,8 +29,15 @@ class ReportFilterByBooks
         $user = Auth::user();
 
         $sort = $formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_LOT_BOUGHT->value ? 'desc' : 'asc';
-        $free = PaymentTypeEnum::TYPE_FREE->value;
+
+        // $title is a COLUMN IDENTIFIER and therefore cannot be bound; it is
+        // allow-listed against App\Core\Enums\LanguageEnum in LanguageHelper.
         $title = LanguageHelper::getTitle();
+
+        $bindings = [
+            'free'      => PaymentTypeEnum::TYPE_FREE->value,
+            'author_id' => $user->getId(),
+        ];
 
         if ($formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_FREE->value) {
             $sqlQuery = "
@@ -38,7 +46,7 @@ class ReportFilterByBooks
                         product_id,
                         count(*) as amount_sold
                     from products_orders
-                    where enabled and payment_type = '{$free}' %s %s %s
+                    where enabled and payment_type = :free %s %s %s
                     group by product_id
                     order by amount_sold desc
                 ),
@@ -55,6 +63,10 @@ class ReportFilterByBooks
                     )
             ";
         } else if ($formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_NOT_BOUGHT->value) {
+            // A second, distinct placeholder name is required: PDO does not
+            // reliably accept the same named parameter twice in one statement.
+            $bindings['author_id_outer'] = $user->getId();
+
             $sqlQuery = "
                 with list as (
                     select
@@ -81,7 +93,7 @@ class ReportFilterByBooks
                                        select
                                             product_id
                                        from products_orders
-                                       where enabled = true and payment_type != '{$free}' %s %s %s) and p.author_id = {$user->getId()} and p.price_value is not null
+                                       where enabled = true and payment_type != :free %s %s %s) and p.author_id = :author_id_outer and p.price_value is not null
                 )
             ";
         } else {
@@ -90,7 +102,7 @@ class ReportFilterByBooks
                                        count(*) as amount_sold,
                                        sum(merchant_money_amount) as merchant_money_amount
                                 from products_orders
-                                where enabled and payment_type != '{$free}' %s %s %s
+                                where enabled and payment_type != :free %s %s %s
                                 group by product_id
                                 order by amount_sold {$sort}),
                      list as (select f.path || '/' || f.file_name as path,
@@ -109,20 +121,29 @@ class ReportFilterByBooks
         $totalQuery = $sqlQuery . " select count(*) as total from list";
         $sqlQuery .= "select * from list";
 
-
         $queryWhereFirst = '';
-        $formRequest->whenFilled('from_date', function ($value) use (&$queryWhereFirst) {
-            $queryWhereFirst = "and date(created_at) >= '{$value}' ";
+        $formRequest->whenFilled('from_date', function ($value) use (&$queryWhereFirst, &$bindings) {
+            if (!is_scalar($value)) {
+                return;
+            }
+
+            $queryWhereFirst = 'and date(created_at) >= :from_date ';
+            $bindings['from_date'] = (string) $value;
         });
 
         $queryWhereSecond = '';
-        $formRequest->whenFilled('to_date', function ($value) use (&$queryWhereSecond) {
-            $queryWhereSecond = "and date(created_at) <= '{$value}' ";
+        $formRequest->whenFilled('to_date', function ($value) use (&$queryWhereSecond, &$bindings) {
+            if (!is_scalar($value)) {
+                return;
+            }
+
+            $queryWhereSecond = 'and date(created_at) <= :to_date ';
+            $bindings['to_date'] = (string) $value;
         });
 
-        $sqlQuery = sprintf($sqlQuery, "and author_id = {$user->getId()} ", $queryWhereFirst, $queryWhereSecond);
-        $totalQuery = sprintf($totalQuery, "and author_id = {$user->getId()} ", $queryWhereFirst, $queryWhereSecond);
+        $sqlQuery = sprintf($sqlQuery, 'and author_id = :author_id ', $queryWhereFirst, $queryWhereSecond);
+        $totalQuery = sprintf($totalQuery, 'and author_id = :author_id ', $queryWhereFirst, $queryWhereSecond);
 
-        return PaginationFilter::wrap($sqlQuery, $totalQuery, $formRequest);
+        return PaginationFilter::wrap($sqlQuery, $totalQuery, $formRequest, $bindings);
     }
 }

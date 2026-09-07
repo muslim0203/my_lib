@@ -596,6 +596,27 @@ class Product extends Model
         $this->price_value = $price_value;
     }
 
+    /**
+     * Mahsulot haqiqatan bepulmi. Bepul egallash va pullik kontentga ruxsat
+     * berish qarorlari uchun yagona manba.
+     *
+     * @return bool
+     */
+    public function isFree(): bool
+    {
+        $priceValue = $this->getPriceValue();
+
+        if ($priceValue === null || trim((string) $priceValue) === '') {
+            return true;
+        }
+
+        if (!is_numeric($priceValue)) {
+            return false;
+        }
+
+        return (float) $priceValue <= 0.0;
+    }
+
     public function getDiscountId(): ?int
     {
         return $this->discount_id;

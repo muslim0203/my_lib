@@ -1,32 +1,92 @@
+; =============================================================================
+; PHP-FPM pool: marketplace
+; Mounted at /usr/local/etc/php-fpm.d/www.conf (see docker-compose*.yml).
+; =============================================================================
+
 [www]
-listen = 127.0.0.1:9000
-listen.owner = www-data
-listen.group = www-data
-listen.mode = 0666
+
+; -----------------------------------------------------------------------------
+; B1: listen manzili.
+; Oldin: "listen = 127.0.0.1:9000". Konteyner ichidagi 127.0.0.1 faqat shu
+; konteynerning o'zi uchun ochiq bo'ladi, shuning uchun nginx konteyneridagi
+; "fastcgi_pass php:9000" hech qachon ulana olmaydi -> 502 Bad Gateway.
+; "9000" (host qismisiz) = konteyner ichidagi barcha interfeyslar.
+; Bu portni HOSTGA chiqarmaymiz: docker-compose.yml da php uchun "ports:" yo'q,
+; ya'ni 9000 faqat "marketplace" docker tarmog'i ichida ko'rinadi.
+; -----------------------------------------------------------------------------
+listen = 9000
+
+; listen.owner / listen.group / listen.mode OLIB TASHLANDI.
+; Ular faqat UNIX socket uchun ma'noga ega; TCP listen'da e'tiborga olinmaydi.
+; Eski qiymat 0666 edi - u yolg'on xavfsizlik hissi berardi.
+; listen.allowed_clients ni ishlatmadik: docker tarmog'idagi nginx IP'si
+; dinamik. Himoya = portning hostga chiqarilmagani + tarmoq izolyatsiyasi.
 
 user = www-data
 group = www-data
 
+; -----------------------------------------------------------------------------
+; B1: process manager o'lchami.
+; ARIFMETIKA (FARAZ - operator tasdiqlashi SHART, bu o'lchangan raqam EMAS):
+;   * php konteyneri uchun RAM byudjeti  : 2048 MB  <-- FARAZ
+;   * OS + opcache + FPM master uchun ~25%: -512 MB
+;   * ishchilarga qoladi                 : 1536 MB
+;   * bitta Laravel API worker'ining odatiy RSS: ~128 MB  <-- FARAZ
+;   * 1536 / 128 = 12  ->  pm.max_children = 12
+; DIQQAT: php_admin_value[memory_limit] = 256M bu SO'ROV BOSHIGA SHIFT (ceiling),
+; o'rtacha sarf emas. Eng yomon holatda 12 x 256M = 3072 MB > 2048 MB byudjet.
+; Bu qabul qilingan risk: 256M shiftga faqat patologik so'rovlar yetadi.
+; OPERATOR: docker'da "mem_limit"/"deploy.resources.limits.memory" qo'ying va
+; haqiqiy RSS'ni o'lchab (ps -o rss -C php-fpm) yuqoridagi raqamlarni qayta hisoblang.
+; -----------------------------------------------------------------------------
 pm = dynamic
-pm.max_children = 5
-pm.start_servers = 2
-pm.min_spare_servers = 1
-pm.max_spare_servers = 3
+pm.max_children = 12
+pm.start_servers = 4
+pm.min_spare_servers = 2
+pm.max_spare_servers = 6
 pm.max_requests = 500
 pm.process_idle_timeout = 45s
 
-slowlog = /var/log/php-fpm/pm.gov.uz.log.slow
+; FPM status/ping endpoint'lari - healthcheck uchun.
+; Nginx bularni tashqariga chiqarmaydi (default.conf da ular uchun location yo'q),
+; healthcheck konteyner ichida cgi-fcgi/php-fpm orqali chaqiradi.
+pm.status_path = /fpm-status
+ping.path = /fpm-ping
+ping.response = pong
+
+; -----------------------------------------------------------------------------
+; B1: log yo'llari.
+; Oldin: /var/log/php-fpm/pm.gov.uz.log(.slow) - (a) katalog hech bir Dockerfile
+; da yaratilmagan, (b) fayl nomi boshqa loyihadan ko'chirilgan.
+; Endi: xatolar STDERR ga ketadi -> compose'ning json-file drayveri ushlaydi
+; ("docker logs marketplace_php_fpm"). Slowlog esa haqiqiy fayl talab qiladi,
+; shuning uchun katalog fpm/Dockerfile da yaratildi va nomi loyihaga moslandi.
+; -----------------------------------------------------------------------------
+slowlog = /var/log/php-fpm/marketplace-slow.log
 request_slowlog_timeout = 0
 request_slowlog_trace_depth = 20
 
 request_terminate_timeout = 90
 
+; Worker'lar stdout/stderr ga yozganini FPM master log'iga (=stderr) uzatish.
+catch_workers_output = yes
+decorate_workers_output = no
+
 env[TMP] = /tmp
 env[TMPDIR] = /tmp
 env[TEMP] = /tmp
 
+; clear_env: default "yes" (konteyner env o'zgaruvchilari PHP ga yetib bormaydi).
+; Laravel .env faylini o'qigani uchun hozircha default qoldirildi. Agar
+; konfiguratsiyani faqat docker env orqali uzatmoqchi bo'lsangiz, quyidagini
+; yoqing va .env faylini deploy'dan chiqarib tashlang:
+; clear_env = no
+
 php_admin_value[max_execution_time] = 90
-php_admin_value[memory_limit] = 512M
+; 256M: so'rov boshiga shift. Yuqoridagi arifmetikaga qarang.
+; 70 MB audio yuklash oqim (stream) orqali diskdagi upload_tmp_dir ga tushadi,
+; xotiraga to'liq o'qilmaydi - shuning uchun 256M yetarli.
+php_admin_value[memory_limit] = 256M
 php_admin_value[upload_tmp_dir] = /tmp
-php_admin_value[error_log] = /var/log/php-fpm/pm.gov.uz.log
+php_admin_value[error_log] = /proc/self/fd/2
 php_admin_flag[log_errors] = on

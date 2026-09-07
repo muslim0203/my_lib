@@ -25,27 +25,24 @@ class EmailAuthService implements AuthInterface
      */
     public function login(FormRequest $formRequest): string
     {
-        $user = $this->userRepository->findByEmail($formRequest->post('email'));
-
-        $userVerifyTokenMail = $this->usersVerifyTokenMailRepository->getByTokenAndUserId(
-            $user->getId(),
-            (string)$formRequest->post('code')
-        );
-
         $guard = Auth::guard(GuardsEnum::_MAIL->value);
 
         if (!($guard instanceof JWTGuard)) {
             abort(401, __('client.Auth is not supported JWTGuard'));
         }
 
+        // Kod endi hash ko'rinishida saqlanadi, shuning uchun uni
+        // oldindan qidirib bo'lmaydi. Tekshirish, urinishlar hisobi va
+        // bir martalik iste'mol EmailUserProvider::validateCredentials
+        // ichidagi atomar amalda bajariladi.
         $token = $guard->attempt($formRequest->only('email', 'code'));
 
         if ($token === false) {
+            // Barcha muvaffaqiyatsiz holatlar uchun bitta umumiy xato:
+            // noto'g'ri kod, muddati o'tgan kod, mavjud bo'lmagan pochta
+            // yoki urinishlar chegarasi - hammasi bir xil ko'rinadi.
             abort(401, __('client.Auth login failed'));
         }
-
-        $userVerifyTokenMail->setEnabled(false);
-        $this->usersVerifyTokenMailRepository->save($userVerifyTokenMail);
 
         return (string)$token;
     }

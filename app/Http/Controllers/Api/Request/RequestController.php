@@ -20,6 +20,8 @@ use App\Http\Resources\Requests\RequestViewResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controller;
+use App\Models\Users\User;
+use Illuminate\Support\Facades\Auth;
 
 class RequestController extends Controller
 {
@@ -54,7 +56,23 @@ class RequestController extends Controller
      */
     public function view(int $id, RequestRepository $requestRepository): JsonResponse
     {
-        return Success::send('Request view', new RequestViewResource($requestRepository->get($id)));
+        /**
+         * @var User|null $user
+         */
+        $user = Auth::user();
+
+        if (empty($user)) {
+            abort(403, __('client.Unauthorized'));
+        }
+
+        // Ariza ichida passport, PINFL va hisob raqami bor. Moderator
+        // (xodim) barcha arizalarni ko'radi, oddiy foydalanuvchi esa
+        // faqat o'zinikini.
+        $request = empty($user->employee_id)
+            ? $requestRepository->getOwned($id, $user->getId())
+            : $requestRepository->get($id);
+
+        return Success::send('Request view', new RequestViewResource($request));
     }
 
     /**

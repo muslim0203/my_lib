@@ -99,11 +99,16 @@ class ProductViewResource extends JsonResource
              */
             $productsOrderRepository = app(ProductsOrderRepository::class);
 
-            if ($productsOrderRepository->existsProductOrder($this->getId(), $user->getId())) {
+            // Order mavjudligining o'zi yetarli emas: pullik mahsulot uchun
+            // to'lov tasdiqlangan bo'lishi shart (hasEntitlement).
+            $isEntitled = $productsOrderRepository->hasEntitlement($this->resource, $user->getId());
+
+            if ($isEntitled) {
                 $isAllow = true;
                 $sourceFile = true;
             }
-            if ($productsOrderRepository->existsProductOrder($this->getId(), $user->getId()) && $linkProductFileRepository->exists($this->getId())) {
+
+            if ($isEntitled && $linkProductFileRepository->exists($this->getId())) {
                 $audioFile = true;
             }
 
@@ -112,7 +117,7 @@ class ProductViewResource extends JsonResource
             }
         }
 
-        $isFree = empty($this->getPriceValue());
+        $isFree = $this->resource->isFree();
 
         return [
             'id' => $this->getId(),
@@ -124,7 +129,7 @@ class ProductViewResource extends JsonResource
             'parent' => $this->parent?->{LanguageHelper::getTitle()},
             'size' => $this->getSize(),
             'wrapper_file' => new FileViewResource($this->wrapperFile),
-            'source_file' => empty($this->getPriceValue()) ? new FileViewResource($this->sourceFile) : ($sourceFile ? new FileViewResource($this->sourceFile) : null),
+            'source_file' => ($isFree || $sourceFile) ? new FileViewResource($this->sourceFile) : null,
             'state' => $this->getState(),
             'price_id' => $this->getPriceId(),
             'price' => $this->price?->{LanguageHelper::getName()},

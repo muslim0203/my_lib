@@ -1,15 +1,34 @@
+# =============================================================================
+# marketplace - LOKAL / DEV compose
+#
+# Production uchun docker-compose.prod.yml dan foydalaning.
+# Tarmoq va volume'larni birinchi marta yaratish:  make init
+# =============================================================================
+
 services:
-    #1.25-alpine
     nginx:
         container_name: marketplace_nginx
         build:
             context: docker/nginx
             dockerfile: Dockerfile
+        restart: unless-stopped
         ports:
             - "127.0.0.1:9090:80"
         volumes:
             - './:/var/www/app'
+            # Lokal tahrirlash uchun override. Image ichida ham nusxasi bor
+            # (docker/nginx/Dockerfile), ya'ni mount tushib qolsa ham konfig
+            # yo'qolmaydi.
             - './docker/nginx/config/nginx.conf:/etc/nginx/nginx.conf:ro'
+            - './docker/nginx/config/default.conf:/etc/nginx/conf.d/default.conf:ro'
+        healthcheck:
+            test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/nginx-health || exit 1" ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        depends_on:
+            - php
         logging:
             driver: "json-file"
             options:
@@ -18,17 +37,27 @@ services:
         networks:
             - marketplace
 
-    #8.3-fpm
     php:
         container_name: marketplace_php_fpm
         build:
             context: docker/php
             dockerfile: fpm/Dockerfile
+        restart: unless-stopped
+        # DIQQAT: bu yerda "ports:" ATAYIN yo'q. FPM 9000 porti faqat
+        # "marketplace" tarmog'i ichida ochiq (B1).
         volumes:
             - './:/var/www/app'
             - './docker/php/fpm/config/php.ini-local:/usr/local/etc/php/php.ini:ro'
             - './docker/php/pool.d/www.conf-local:/usr/local/etc/php-fpm.d/www.conf:ro'
         working_dir: /var/www/app
+        healthcheck:
+            # pool.d/www.conf-local dagi ping.path = /fpm-ping (javob: "pong").
+            test: [ "CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong" ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+        stop_grace_period: 30s
         logging:
             driver: "json-file"
             options:
@@ -39,12 +68,12 @@ services:
         extra_hosts:
             - "host.docker.internal:host-gateway"
 
-    #8.3-cli
     php-cli:
         container_name: marketplace_php_cli
         build:
             context: docker/php
             dockerfile: cli/Dockerfile
+        restart: unless-stopped
         volumes:
             - './:/var/www/app'
             - './docker/php/cli/config/php.ini-local:/usr/local/etc/php/php.ini:ro'
@@ -60,28 +89,67 @@ services:
         extra_hosts:
             - "host.docker.internal:host-gateway"
 
-    #postgres:16
     database:
         container_name: marketplace_db
         image: postgres:16.1-alpine
         restart: always
-        ports:
-            - "${DB_LOCAL_PORT:-5436}:5432"
+        # ---------------------------------------------------------------------
+        # B2: DB porti ENDI HOSTGA CHIQARILMAYDI.
+        # Oldin: "${DB_LOCAL_PORT:-5436}:5432" edi. .env.example da esa
+        # DB_LOCAL_PORT=127.0.0.1:5400 turibdi, ya'ni satr "127.0.0.1:5400:5432"
+        # ga aylanardi - ishlaydi, lekin juda mo'rt: kimdir DB_LOCAL_PORT=5400
+        # deb yozsa, port 0.0.0.0:5400 da butun tarmoqqa ochilib ketardi.
+        # Bazaga kirish kerak bo'lsa:
+        #     docker compose exec database psql -U <user> -d <db>
+        # Agar GUI klient uchun MAJBUR bo'lsa, quyidagini oching (faqat loopback!):
+        # ports:
+        #     - "127.0.0.1:5436:5432"
+        # ---------------------------------------------------------------------
         volumes:
             - 'marketplace:/var/lib/postgresql/data'
-            - './docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf'
-            - './docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf'
+            # B2: eski mount'lar './docker/postgres/...' ga ishora qilardi -
+            # bunday katalog LOYIHADA UMUMAN YO'Q, ya'ni docker uni bo'sh KATALOG
+            # sifatida yaratib qo'yardi va konfiguratsiya hech qachon
+            # qo'llanmasdi. To'g'ri yo'l: docker/database/postgresql/.
+            - './docker/database/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro'
+        # ---------------------------------------------------------------------
+        # B2: faylni mount qilishning O'ZI yetarli emas - rasmiy image
+        # /var/lib/postgresql/data/pg_hba.conf ni o'qiydi. Shuning uchun
+        # serverga hba_file ni aniq ko'rsatamiz.
+        # postgresql.conf ATAYIN mount qilinmadi - sababi
+        # docker/database/postgresql/postgresql.conf boshidagi izohda.
+        # ---------------------------------------------------------------------
+        command: >
+            postgres
+            -c hba_file=/etc/postgresql/pg_hba.conf
+            -c password_encryption=scram-sha-256
         environment:
             POSTGRES_DB: ${DB_DATABASE:-marketplace}
             POSTGRES_USER: ${DB_USERNAME:-postgres}
-            POSTGRES_PASSWORD: ${DB_PASSWORD:-secret!}
-            POSTGRES_HOST_AUTH_METHOD: trust
+            # Default parol OLIB TASHLANDI: .env da DB_PASSWORD bo'lmasa
+            # compose xato beradi (ilgari jimgina "secret!" ishlatilardi).
+            POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env da belgilanishi shart}
+            # B2: "POSTGRES_HOST_AUTH_METHOD: trust" OLIB TASHLANDI.
+            # U barcha TCP ulanishlar uchun autentifikatsiyani BUTUNLAY
+            # o'chirib qo'yardi - parol umuman so'ralmasdi.
+            #
+            # MUHIM: bu o'zgarish ALLAQACHON YARATILGAN 'marketplace' volume'ida
+            # parolni O'ZGARTIRMAYDI. POSTGRES_PASSWORD faqat BIRINCHI initdb
+            # paytida ishlaydi. Mavjud volume uchun operator qo'lda bajaradi:
+            #     docker compose exec database psql -U postgres
+            #     SET password_encryption = 'scram-sha-256';
+            #     ALTER USER postgres WITH PASSWORD '<parol>';
+            # (Volume O'CHIRILMAYDI - aks holda ma'lumotlar yo'qoladi.)
+            POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=trust"
         healthcheck:
-            test: [ "CMD-SHELL", "pg_isready", "-d", "${DB_DATABASE:-marketplace}" ]
-            interval: 30s
-            timeout: 60s
-            retries: 5
-            start_period: 80s
+            # Eski variant buzuq edi: CMD-SHELL faqat BIRINCHI elementni shell
+            # buyrug'i deb oladi, qolgan "-d", "marketplace" e'tiborsiz qolardi.
+            test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+            interval: 10s
+            timeout: 5s
+            retries: 6
+            start_period: 30s
+        stop_grace_period: 60s
         logging:
             driver: "json-file"
             options:
@@ -92,19 +160,26 @@ services:
         networks:
             - marketplace
 
-    #rabbitmq:3.13
     rabbitmq:
         container_name: marketplace_rabbitmq
         image: rabbitmq:3.13-management-alpine
         restart: always
         environment:
             - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-rabbitmq}
-            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-secret!}
+            - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD .env da belgilanishi shart}
         ports:
+            # Faqat loopback - o'zgartirilmadi.
             - "127.0.0.1:15673:15672"
             - "127.0.0.1:5673:5672"
         volumes:
             - 'rabbitmq:/etc/rabbitmq/rabbitmq.config'
+        healthcheck:
+            test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 40s
+        stop_grace_period: 30s
         profiles:
             - dev
         logging:
@@ -121,4 +196,8 @@ volumes:
 
 networks:
     marketplace:
+        # external: true ATAYIN saqlandi - mavjud serverlarda tarmoq allaqachon
+        # shu nom bilan yaratilgan; uni compose boshqaruviga o'tkazish (nom
+        # "<project>_marketplace" ga o'zgarishi) ishlab turgan stendni buzardi.
+        # Yaratish endi qo'lda emas, "make init" orqali.
         external: true

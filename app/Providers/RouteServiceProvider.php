@@ -28,6 +28,30 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // OTP chiqarish: bir xil qabul qiluvchi ham, bir xil IP ham
+        // cheklanadi. Ikkala o'lchov ham kerak - faqat IP bo'yicha
+        // cheklov bitta pochtaga ko'p yuborishni to'xtatmaydi, faqat
+        // pochta bo'yicha cheklov esa ommaviy enumeratsiyani to'xtatmaydi.
+        RateLimiter::for('otp-send', function (Request $request) {
+            $email = (string)$request->input('email');
+
+            return [
+                Limit::perMinute(5)->by('otp-send:ip:' . $request->ip()),
+                Limit::perMinute(2)->by('otp-send:mail:' . mb_strtolower($email)),
+                Limit::perDay(20)->by('otp-send:mail-day:' . mb_strtolower($email)),
+            ];
+        });
+
+        // OTP tekshirish: kodni taxminlashga qarshi.
+        RateLimiter::for('otp-verify', function (Request $request) {
+            $email = (string)$request->input('email');
+
+            return [
+                Limit::perMinute(10)->by('otp-verify:ip:' . $request->ip()),
+                Limit::perMinute(5)->by('otp-verify:mail:' . mb_strtolower($email)),
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

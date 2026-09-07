@@ -36,8 +36,12 @@ class LoginByEmailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email', new EmailRegExRule(), Rule::exists('users', 'email')],
-            'code' => ['required', 'integer', 'digits:4', Rule::exists('users_verify_mail_tokens', 'token')]
+            // `exists` qoidalari olib tashlandi: ular qaysi pochta
+            // ro'yxatdan o'tganini va qaysi kod amalda ekanini oshkor
+            // qilardi. Kodning to'g'riligi endi faqat autentifikatsiya
+            // qatlamida, bir xil umumiy xato bilan tekshiriladi.
+            'email' => ['required', 'string', 'email', new EmailRegExRule()],
+            'code' => ['required', 'integer', 'digits:6']
         ];
     }
 }

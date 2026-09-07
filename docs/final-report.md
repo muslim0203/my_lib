@@ -29,8 +29,8 @@ release darvozasi ochiq qolmoqda:
 |---|---|
 | Branch | `master` |
 | Baseline | `561ef7c` (ish boshlanishidan oldin yaratilgan snapshot) |
-| Yakuniy commit | `e9c9ede` |
-| Hajmi | 136 fayl, +9982 / −776 |
+| Yakuniy kod commiti | `e9c9ede` (undan keyingi commitlar faqat hujjat) |
+| Hajmi | `561ef7c..e9c9ede`: 136 fayl, +9982 / −776 |
 
 Repozitoriy ish boshida git ostida **emas** edi. Har bir o'zgarishni
 ortga qaytarish mumkin bo'lishi uchun avval baseline commit yaratildi.

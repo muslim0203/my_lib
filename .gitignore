@@ -17,7 +17,10 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-/.claude
+
+# Claude Code: loyiha sozlamalari (.claude/settings.json, skills,
+# commands) repoda saqlanadi; faqat shaxsiy local sozlama chetlanadi.
+/.claude/settings.local.json
 storage/framework/cache
 storage/app/
 bootstrap/cache

@@ -52,6 +52,18 @@ class RouteServiceProvider extends ServiceProvider
             ];
         });
 
+        // Admin paneli logini. Faqat IP bo'yicha cheklov bitta akkauntga
+        // qaratilgan hujumni to'xtatmaydi, faqat login bo'yicha cheklov
+        // esa ommaviy urinishni to'xtatmaydi - shuning uchun ikkalasi ham.
+        RateLimiter::for('admin-login', function (Request $request) {
+            $username = mb_strtolower((string)$request->input('username'));
+
+            return [
+                Limit::perMinute(5)->by('admin-login:ip:' . $request->ip()),
+                Limit::perMinute(10)->by('admin-login:user:' . $username . '|' . $request->ip()),
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

@@ -38,6 +38,20 @@ make db-migrate
 docker compose exec php-cli php artisan db:seed
 ```
 
+### Mavjud o'rnatishni yangilashda (MAJBURIY)
+
+Admin panelida endi rol/huquq tekshiruvi bor. Mavjud bazadagi adminlarda
+rol yo'q, shuning uchun deploydan keyin **bir marta** quyidagini bajaring,
+aks holda ular panelga kira olmaydi:
+
+```bash
+php artisan db:seed --class="Database\Seeders\RoleSeeder" --force
+```
+
+Bu buyruq `employee_id` bor va hech qanday roli yo'q foydalanuvchilarga
+`admin` rolini beradi. Roli borlar (masalan, ataylab `moderator` qilinganlar)
+**tegilmaydi**, shuning uchun uni qayta ishga tushirish xavfsiz.
+
 ### Birinchi admin hisobi
 
 Ochiq matnli standart parol **olib tashlandi**. Admin faqat

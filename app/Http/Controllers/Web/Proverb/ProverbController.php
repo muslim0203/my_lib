@@ -86,6 +86,10 @@ class ProverbController extends Controller
         }
 
         Session::flash('success', __('client.Successful removed'));
+
+        // Boshqa admin kontrollerlari kabi filter sahifasiga qaytariladi.
+        // Ilgari metod umuman hech narsa qaytarmasdi (bo'sh 200).
+        return redirect()->route('proverb.filter');
     }
 
     public function findModel(int $id): Proverb

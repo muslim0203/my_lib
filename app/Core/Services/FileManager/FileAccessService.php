@@ -117,6 +117,14 @@ class FileAccessService
         $productsOrderRepository = app(ProductsOrderRepository::class);
 
         foreach ($this->relatedProducts($file) as $product) {
+            // Muallif o'z mahsulotining faylini xarid qilmasdan ham
+            // o'qiy oladi. `products.author_id` foydalanuvchi id'si
+            // (ProductRepository::findByIdAndUser shu ustundan
+            // foydalanadi), shuning uchun to'g'ridan-to'g'ri solishtiriladi.
+            if ((int)$product->getAuthorId() === $user->getId()) {
+                return true;
+            }
+
             if ($productsOrderRepository->hasEntitlement($product, $user->getId())) {
                 return true;
             }

@@ -63,8 +63,8 @@ mos keladigan hech narsa topilmadi.
 | S2 | verified | Tasdiqlandi: OTP `rand(1000, 9999)` (4 xona, CSPRNG emas), bazada **ochiq matnda**, solishtirish `==` (`EmailUserProvider:142`), urinishlar hisobi yo'q, TTL sozlamasining standart qiymati yo'q edi (`env('MAIL_CODE_EXPIRE_AT')` → `addMinutes(null)` → 0 daqiqa), `throttle` esa butun ilovada o'chirilgan edi. Tuzatildi: `random_int` 6 xona, `Hash::make`/`Hash::check`, qator qulfi ostidagi atomar iste'mol, 5 urinish chegarasi, bir martalik ishlatish, IP+pochta bo'yicha ikki o'lchovli throttle, `throttle:api` qayta yoqildi. Testlar o'tdi. |
 | S3 | fixed-unverified | Tasdiqlandi, lekin **auditdagi fayl yo'llari noto'g'ri**: `app/Core/Services/Authority/...` va `app/Core/Services/Author/...` mavjud emas; haqiqiy yo'l `app/Core/Services/Register/`. `RequestRepository::get()` faqat `where('id')` bilan olardi, `RequestController::view()` esa hech qanday egalik tekshirmasdi — istalgan autentifikatsiyalangan foydalanuvchi begona arizaning `passport`, `pin_fl`, `account_number` ma'lumotlarini o'qiy olardi. Register xizmatlari esa begona arizani o'zlashtirib, `author_id` ni o'ziga o'tkazardi. Tuzatildi: `getOwned()` so'rov darajasida cheklaydi; xodim (moderator) uchun istisno saqlandi. |
 | S4 | fixed-unverified | Tasdiqlandi: `AdminUserSeeder` da ochiq parol `Qwerty123$`, tasodifiy email, va `Employee::factory()` har ishga tushirishda shartsiz bajarilardi (yetim qatorlar). Tuzatildi: parol faqat `config('auth.admin_initial.password')` dan olinadi, yo'q bo'lsa seeder **to'xtaydi**; mavjud admin hech qachon qayta yozilmaydi; `PermissionSeeder` `DatabaseSeeder` ga qo'shildi (ilgari umuman ishga tushmasdi). |
-| S5 | *(quyida — S2b agenti hisobotidan to'ldiriladi)* | Tasdiqlandi: `routes/web.php` dagi barcha 26 admin guruhida faqat `auth` bor; butun `app/` da bitta ham `can(`, `Gate::`, `authorize(`, `permission:`, `role:` yo'q. `spatie/laravel-permission` o'rnatilgan, `PermissionSeeder` mavjud, lekin `DatabaseSeeder` da chaqirilmagan va `User` modelida `HasRoles` yo'q. Admin = `users.employee_id IS NOT NULL`. |
-| S6 | *(quyida)* | Qisman tasdiqlandi. **Auditning bir da'vosi noto'g'ri:** `VerifyCsrfToken::$except` **bo'sh**. Haqiqiy muammo boshqa: 18 ta holat o'zgartiruvchi marshrut `Route::get` sifatida e'lon qilingan (Laravel GET uchun CSRF tekshirmaydi), ulardan 16 tasi qo'shimcha `->withoutMiddleware(VerifyCsrfToken::class)` chaqiradi. Yana bir noto'g'ri da'vo: approve/reject **POST** (web.php:217, 232, 359, 362) — faqat delete/destroy GET. |
+| S5 | fixed-unverified | Tasdiqlandi: `routes/web.php` dagi barcha 26 admin guruhida faqat `auth` bor; butun `app/` da bitta ham `can(`, `Gate::`, `authorize(`, `permission:`, `role:` yo'q. `spatie/laravel-permission` o'rnatilgan, `PermissionSeeder` mavjud, lekin `DatabaseSeeder` da chaqirilmagan va `User` modelida `HasRoles` yo'q. Admin = `users.employee_id IS NOT NULL`. Tuzatildi: `User` ga `HasRoles`, 21 ta huquq va `admin`/`moderator` rollari (idempotent seeder), har bir admin guruhiga `can:<huquq>`, `Gate::before` faqat `admin` roliga. **Lockout xavfi ataylab hal qilindi** - quyidagi operator qadamiga qarang. |
+| S6 | fixed-unverified | Qisman tasdiqlandi. **Auditning bir da'vosi noto'g'ri:** `VerifyCsrfToken::$except` **bo'sh**. Haqiqiy muammo boshqa: 18 ta holat o'zgartiruvchi marshrut `Route::get` sifatida e'lon qilingan (Laravel GET uchun CSRF tekshirmaydi), ulardan 16 tasi qo'shimcha `->withoutMiddleware(VerifyCsrfToken::class)` chaqiradi. Yana bir noto'g'ri da'vo: approve/reject **POST** (web.php:217, 232, 359, 362) — faqat delete/destroy GET. |
 | S7 | verified | Tasdiqlandi: `ValidationException` ataylab **500** bilan qaytarilardi va `$e->errors()` tashlab yuborilardi; `config('app.debug')` umuman o'qilmasdi; yagona qalqon `config('app.env') === 'production'` edi, ya'ni `local`/`staging`/`dev` muhitlarida to'liq SQL matni va bindinglar mijozga ketardi; `$statusCode` singleton'da instance-property edi. Tuzatildi. `GET /api/user` endi 500 emas, **401** qaytaradi. |
 | S8 | verified | Tasdiqlandi: `config/cors.php` da `'allowed_origins' => ['*, *, *, *, *']` — bu bitta buzuq satr, wildcard ham emas; hech bir origin'ga mos kelmasdi. nginx esa alohida `Access-Control-Allow-Origin: *` + `Allow-Credentials: true` qo'shardi. Tuzatildi: Laravel yagona CORS egasi, originlar `CORS_ALLOWED_ORIGINS` dan; nginx CORS bloklari olib tashlandi. |
 | S9 | blocked | **Qayta tasdiqlab bo'lmadi: tarmoq va composer yo'q.** Lock fayllardan offline o'qilgan haqiqiy versiyalar: `laravel/framework v10.48.28`, `tymon/jwt-auth 2.1.1`, `spatie/laravel-permission 6.12.0`, `laravel/sanctum v3.3.3`, `laravel/socialite v5.17.1`, `guzzlehttp/guzzle 7.9.2`, `symfony/http-foundation v6.4.18`, `nunomaduro/larastan v2.9.12` (lock faylida `abandoned` deb belgilangan, `larastan/larastan` ga ko'chirilgan), `laravel/telescope v5.4.0`; `vite 5.4.21`, `axios 1.20.0`. Docker bazaviy image'lari `php:8.3.0-*` — bu 8.3 ning birinchi relizi va u boshqa xavfsizlik yangilanishini olmaydi. |
@@ -96,7 +96,7 @@ mos keladigan hech narsa topilmadi.
 | L2 | confirmed | Tasdiqlandi va **ataylab tuzatilmadi**: birorta Blade `@vite` ishlatmaydi, CI hech qachon asset build qilmaydi, admin `public/assets/**` dagi tayyor bundle'lardan foydalanadi. Ya'ni butun Vite zanjiri ishlatilmaydi. O'chirish tavsiya qilinadi, lekin bu mahsulot qarori. |
 | L3 | confirmed | Tasdiqlandi: `routes/api.php` da `auth:sanctum` ishlatiladi, lekin `config/auth.php` da `sanctum` guardi yo'q; `SmsAuthService::login()` tanasi `// TODO`. Kod o'chirilmadi — iste'molchilari to'liq kuzatilmagan. |
 | L4 | fixed-unverified | Log darajasi va JWT xatolari bo'yicha o'zgarishlar exception handler ichida qilindi. Production log saqlash muddati va monitoring **operator qarori** bo'lib qolmoqda. |
-| L5 | in-progress | README va Makefile hali yangilanmagan. |
+| L5 | verified | Tasdiqlandi: README `.env-example` (noto'g'ri nom) ni ko'rsatardi, tarmoq yaratishni va kalit generatsiyasini umuman aytmasdi, `Makefile` da esa `artisan-migrate` compose'da mavjud bo'lmagan `artisan` servisiga murojaat qilardi (ya'ni hech qachon ishlamagan). Ikkalasi ham qayta yozildi. |
 | L6 | verified | Tasdiqlandi: `lang/oz/validation+.php` nomi buzuq bo'lgani uchun Laravel guruhni `validation+` deb hal qilardi, `oz` esa standart lokal — ya'ni **oz tilida birorta validatsiya xabari ishlamasdi**. `git mv` bilan `validation.php` ga o'zgartirildi va `__('validation.required')` haqiqatan o'zbekcha matn qaytarishi tekshirildi. |
 | L7 | verified | **Audit da'vosi qisman noto'g'ri.** `database.sqlite` repo ildizida emas — u `database/database.sqlite` da va `database/.gitignore` orqali allaqachon to'g'ri ignore qilingan. `composer.phar` esa haqiqatan 3.6 MB va git'da kuzatilardi: `.gitignore` ga `*.phar` qo'shildi va `git rm --cached` qilindi. Fayl diskda qoldi, tarix qayta yozilmadi. |
 
@@ -126,6 +126,12 @@ mos keladigan hech narsa topilmadi.
 | `UsersVerifyMailToken::isEnable()` `=== true` bilan solishtiradi; ba'zi drayverlar `1` qaytaradi. | O'rta | Tuzatildi (aniq `boolean` cast) |
 | `docker/php/deploy/Dockerfile` `COPY . /test` qiladi, `.dockerignore` esa yo'q — ishchi katalogdagi `.env` (jonli `APP_KEY` bilan) image qatlamiga tushadi. | Yuqori | Tuzatilmoqda |
 | `sendTokenToMail` noma'lum har qanday pochta uchun foydalanuvchi yaratadi (cheksiz hisob yaratish). | O'rta | Qisman: throttle bilan yumshatildi, mahsulot oqimi o'zgartirilmadi |
+| **`route:cache` ikkinchi sababdan ham yiqilardi:** 7 juft marshrut nomi `routes/api.php` va `routes/web.php` da takrorlangan (`auth.logout`, `company.view`, `company-partner.view`, `company-social-network.view`, `product.view`, `product.delete`, `request.view`). Bu B3 dan mustaqil, alohida deploy blokeri. | Bloker | Tuzatildi: API tomonidagi nomlarga `api.` prefiksi. `route:cache` endi exit 0 |
+| **Click imzosi bo'sh sir bilan hisoblanardi.** `CLICK_SECRET_KEY` sozlanmagan bo'lsa (namunada bo'sh), algoritmni bilgan har kim to'g'ri `md5` imzo yasab, soxta callback bilan pullik mahsulotni ochib olardi. `service_id` tekshiruvi ham `intval(null) === 0` sababli chetlab o'tilardi. | Yuqori | Tuzatildi (fail closed + `hash_equals`), testlar bilan qoplandi |
+| `EmployeeController::editProfile/editUser` URL'dagi `id` ni tekshirmasdi: istalgan xodim boshqa xodimning profilini va login ma'lumotlarini o'zgartira olardi. | Yuqori | Tuzatildi (egalik tekshiruvi) |
+| To'lov callback'lari `sign_string` bilan birga to'liq loglanardi. | Past | Tuzatildi (`[redacted]`) |
+| GET→DELETE o'tkazilgandan keyin admin paneldagi 18 ta o'chirish tugmasi amalni bajarsa ham qizil "xato" oynasini ko'rsatardi (JS faqat JSON kutardi, kontrollerlar esa redirect qaytaradi). | O'rta | Tuzatildi (`Delete.js` da bitta joyda) |
+| `ProductController::viewRequest()` passport/PINFL qaytaradi, lekin **hech qanday marshrutga bog'lanmagan** - o'lik kod, oshkorlik yo'q. | Ma'lumot | O'zgartirilmadi |
 
 ---
 
@@ -143,6 +149,17 @@ mos keladigan hech narsa topilmadi.
 5. Mavjud fayllarni `storage/app/private` ga ko'chirish tavsiya etiladi.
    Ko'chirilmasa ham o'qish ishlaydi (eski disklar tekshiriladi), lekin
    `public/storage` symlinki **yaratilmasligi** kerak.
-6. Mavjud bazadagi pullik mahsulotlarga tegishli `payment_type = 'free'`
+6. **Mavjud adminlar bloklanib qolmasligi uchun BIR MARTA bajarish shart:**
+
+   ```bash
+   php artisan db:seed --class="Database\Seeders\RoleSeeder" --force
+   ```
+
+   Bu buyruq `employee_id` bor va hech qanday roli yo'q foydalanuvchilarga
+   `admin` rolini beradi. Roli borlar tegilmaydi, shuning uchun buyruqni
+   qayta ishga tushirish xavfsiz. `RoleSeeder` ataylab `DatabaseSeeder`
+   ga qo'shilmagan - bu ko'rinadigan, ongli qadam bo'lishi kerak.
+
+7. Mavjud bazadagi pullik mahsulotlarga tegishli `payment_type = 'free'`
    orderlarni tekshirish: ular eski zaiflik orqali yaratilgan bo'lishi
    mumkin. Yangi kod ularni bloklaydi, lekin ularni ko'rib chiqish kerak.

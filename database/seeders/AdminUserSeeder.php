@@ -69,6 +69,11 @@ class AdminUserSeeder extends Seeder
             ]);
             $user->setEmployeeId($employee->getKey());
             $user->save();
+
+            // Rolsiz admin panelga kira olmaydi (Gate::before faqat
+            // `admin` roliga hamma narsani beradi), shuning uchun rol
+            // aynan shu yerda beriladi.
+            $user->assignRole(PermissionSeeder::ROLE_ADMIN);
         });
 
         $this->command?->info("Admin '{$username}' yaratildi.");

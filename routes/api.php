@@ -32,6 +32,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
+ * Diqqat: quyidagi marshrut nomlaridan bir nechtasi `routes/web.php`
+ * da ham uchraydi. Dublikat nom `route:cache` ni yiqitadi (deploy
+ * blokeri), shuning uchun bunday nomlar bu faylda `api.` prefiksi
+ * bilan yoziladi.
+ */
+
+/*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
@@ -83,7 +90,7 @@ Route::controller(AuthController::class)
     ->group(function () {
 
         Route::get('auth/logout', 'logout')
-            ->name('auth.logout');
+            ->name('api.auth.logout');
 
     });
 
@@ -156,19 +163,19 @@ Route::controller(EnumCategoriesController::class)
 Route::controller(CompanyController::class)
     ->group(function () {
         Route::get('/company/view', 'view')
-            ->name('company.view');
+            ->name('api.company.view');
     });
 
 Route::controller(CompanyPartnerController::class)
     ->group(function () {
         Route::get('/company-partner/view', 'view')
-            ->name('company-partner.view');
+            ->name('api.company-partner.view');
     });
 
 Route::controller(CompanySocialNetworkController::class)
     ->group(function () {
         Route::get('/company-social-network/view', 'view')
-            ->name('company-social-network.view');
+            ->name('api.company-social-network.view');
     });
 
 Route::controller(QuestionController::class)
@@ -197,7 +204,7 @@ Route::controller(ProductController::class)
 
         Route::get('product/view/{id}', 'view')
             ->withoutMiddleware(['jwt.verify'])
-            ->name('product.view');
+            ->name('api.product.view');
 
         Route::get('product/personal-list', 'personalList')
             ->name('product.personal-list');
@@ -241,7 +248,7 @@ Route::controller(ProductController::class)
             ->name('product.my-list');
 
         Route::delete('product/delete/{id}', 'delete')
-            ->name('product.delete');
+            ->name('api.product.delete');
 
     });
 
@@ -256,7 +263,7 @@ Route::controller(RequestController::class)
             ->name('request.list');
 
         Route::get('request/view/{id}', 'view')
-            ->name('request.view');
+            ->name('api.request.view');
 
         Route::post('request/create-author/{id?}', 'createAuthor')
             ->name('request.create-author');

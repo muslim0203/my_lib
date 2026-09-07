@@ -120,9 +120,12 @@ class AdminRbacTest extends TestCase
 
         $forAdmin = $this->makeProverb();
 
+        // Kontroller boshqa admin kontrollerlari kabi filter sahifasiga
+        // qaytaradi. Muhimi - amal RAD ETILMAYDI (403 emas) va yozuv
+        // haqiqatan o'chiriladi (quyidagi assertDatabaseMissing).
         $this->actingAs($admin)
             ->delete(route('proverb.delete', ['id' => $forAdmin->getKey()]))
-            ->assertSuccessful();
+            ->assertRedirect(route('proverb.filter'));
 
         $this->assertDatabaseMissing('proverbs', ['id' => $forAdmin->getKey()]);
     }

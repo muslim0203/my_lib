@@ -15,7 +15,7 @@ Route::middleware('guest')->group(function () {
      * nomlangan limiter App\Providers\RouteServiceProvider da ro'yxatdan
      * o'tkazilishi kerak (u boshqa egaga tegishli fayl).
      *
-     * `throttle:5,1` = bir IP + marshrut uchun daqiqasiga 5 urinish.
+     * `throttle:admin-login` = bir IP + marshrut uchun daqiqasiga 5 urinish.
      */
     Route::post('login', [AuthController::class, 'login'])
         ->middleware('throttle:5,1')

@@ -93,7 +93,7 @@ class ClickService implements ClickContract
     public function preparePayment(ClickTransferPaymentPrepareFormRequest $clickTransferPaymentPrepareFormRequest): ClickResult
     {
         $params = $clickTransferPaymentPrepareFormRequest->validated();
-        Log::warning('preparePayment request', $clickTransferPaymentPrepareFormRequest->validated());
+        Log::info('Click preparePayment', self::redact($clickTransferPaymentPrepareFormRequest->validated()));
 
         /**
          * @var ClickPaymentRepository $clickPaymentRepository
@@ -114,7 +114,11 @@ class ClickService implements ClickContract
             return ClickResult::alreadyPaid();
         }
 
-        if (intval(config('click.service_id')) !== intval($params['service_id'])) {
+        $serviceId = (string)config('click.service_id');
+
+        // Sozlanmagan holatda intval(null) === 0 bo'lardi va service_id=0
+        // yuborgan so'rov bu tekshiruvdan o'tib ketardi.
+        if ($serviceId === '' || intval($serviceId) !== intval($params['service_id'])) {
             return ClickResult::transactionCancelled();
         }
 
@@ -166,7 +170,7 @@ class ClickService implements ClickContract
     public function completePayment(ClickTransferPaymentCompleteFormRequest $clickTransferPaymentCompleteFormRequest): ClickResult
     {
         $params = $clickTransferPaymentCompleteFormRequest->validated();
-        Log::warning('completePayment request', $params);
+        Log::info('Click completePayment', self::redact($params));
 
         /**
          * @var ClickPaymentRepository $clickPaymentRepository
@@ -216,17 +220,51 @@ class ClickService implements ClickContract
      * @param array $params
      * @return bool
      */
+    /**
+     * Logga yozishdan oldin imzoni olib tashlaydi.
+     *
+     * `sign_string` sirdan hosil qilingan qiymat, shuning uchun u
+     * loglarda saqlanmaydi.
+     *
+     * @param array $params
+     * @return array
+     */
+    protected static function redact(array $params): array
+    {
+        if (array_key_exists('sign_string', $params)) {
+            $params['sign_string'] = '[redacted]';
+        }
+
+        return $params;
+    }
+
     protected function isMatchSignKey(array $params): bool
     {
-        return $params['sign_string'] === md5(join('', [
-                $params['click_trans_id'],
-                $params['service_id'],
-                config('click.secret_key'),
-                $params['merchant_trans_id'],
-                $params['merchant_prepare_id'] ?? '',
-                $params['amount'],
-                $params['action'],
-                $params['sign_time']
-            ]));
+        $secretKey = (string)config('click.secret_key');
+
+        // Sozlanmagan integratsiya hech qachon "to'g'ri imzo" bermaydi.
+        // Bo'sh sir bilan md5 hisoblansa, algoritmni bilgan har kim
+        // haqiqiy imzoni o'zi yasay olardi va soxta callback orqali
+        // pullik mahsulotni ochib olardi.
+        if ($secretKey === '') {
+            Log::error('Click: secret_key sozlanmagan, callback rad etildi.');
+
+            return false;
+        }
+
+        // MD5 provayder talabi, shuning uchun algoritm o'zgartirilmaydi.
+        // Solishtirish esa vaqt bo'yicha xavfsiz bajariladi.
+        $expected = md5(join('', [
+            $params['click_trans_id'],
+            $params['service_id'],
+            $secretKey,
+            $params['merchant_trans_id'],
+            $params['merchant_prepare_id'] ?? '',
+            $params['amount'],
+            $params['action'],
+            $params['sign_time']
+        ]));
+
+        return hash_equals($expected, (string)($params['sign_string'] ?? ''));
     }
 }

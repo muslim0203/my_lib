@@ -52,9 +52,20 @@
     </div>
     <!--end::Menu item-->
 
+    {{--
+        Logout endi POST: GET bo'lganida istalgan saytdagi <img src="/logout">
+        foydalanuvchini tizimdan chiqarib yuborardi (Laravel GET so'rovlarda
+        CSRF tokenni umuman tekshirmaydi). Marshrut routes/auth.php da
+        Route::post('logout', ...) ga o'zgartirildi.
+    --}}
     <div class="menu-item px-5">
-        <a href="{{ route('auth.logout')  }}"
-           class="menu-link px-5">{{ __('client.Logout') }}</a>
+        <form method="POST" action="{{ route('auth.logout') }}" class="m-0">
+            @csrf
+            <button type="submit"
+                    class="menu-link px-5 btn btn-link text-start w-100 border-0 bg-transparent shadow-none">
+                {{ __('client.Logout') }}
+            </button>
+        </form>
     </div>
     <!--end::Menu item-->
     <!--begin::Menu item-->
@@ -96,17 +107,15 @@
         </a>
         <!--begin::Menu sub-->
         <div class="menu-sub menu-sub-dropdown w-230px py-4">
-            <!--begin::Menu item-->
-            <div class="menu-item px-3">
-                <a href="{{ route('locale', ['en']) }}"
-                   class="menu-link d-flex px-5 {{ app()->currentLocale() === 'en' ? 'active' : '' }}">
-													<span class="symbol symbol-20px me-4">
-														<img class="rounded-1"
-                                                             src="{{ asset('assets/media/flags/united-states.svg') }}"
-                                                             alt=""/>
-													</span>@lang('lang.English')</a>
-            </div>
-            <!--end::Menu item-->
+            {{--
+                `en` bandi olib tashlandi: App\Core\Enums\LanguageEnum faqat
+                oz/uz/ru ni biladi va LanguageHelper SQL ustun nomini shu
+                ro'yxatdan yasaydi (title_en / name_en ustunlari bazada yo'q).
+                Til kodi endi qat'iy oq ro'yxat bo'yicha tekshirilgani uchun
+                `en` havolasi hech nima qilmaydigan "o'lik" tugma bo'lib
+                qolardi. Ingliz tilini qaytarish uchun avval bazaga *_en
+                ustunlari va LanguageEnum ga _EN kerak.
+            --}}
             <!--begin::Menu item-->
             <div class="menu-item px-3">
                 <a href="{{ route('locale', ['oz']) }}"

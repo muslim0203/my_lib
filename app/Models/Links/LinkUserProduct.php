@@ -20,6 +20,11 @@ class LinkUserProduct extends Model
 {
     use HasCompositePrimaryKey;
 
+    /**
+     * Kompozit birlamchi kalit (HasCompositePrimaryKey trait).
+     *
+     * @var array<int, string>
+     */
     protected $primaryKey = ['user_id', 'product_id'];
     public $incrementing = false;
 

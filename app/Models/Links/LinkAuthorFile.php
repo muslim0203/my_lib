@@ -19,6 +19,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LinkAuthorFile extends Model
 {
     use HasCompositePrimaryKey;
+    /**
+     * Kompozit birlamchi kalit (HasCompositePrimaryKey trait).
+     *
+     * @var array<int, string>
+     */
     protected $primaryKey = ['author_id', 'file_id'];
     public $incrementing = false;
 

@@ -48,12 +48,20 @@ class ProductsOrderService
         }
 
 
+        // Qiymatlar string sifatida keladi (decimal ustunlar). Arifmetika
+        // oldidan aniq turga keltiriladi.
+        $orderPriceValue = (float)$order_price;
+
+        // Hisoblanmagan holatda kiruvchi qiymat AYNAN o'zgarishsiz
+        // uzatiladi - pul maydonida keraksiz format o'zgarishi bo'lmasin.
+        $merchantMoneyValue = null;
+
         $paymentSystemMoney = null;
-        $incomeMoneyAmount = $order_price;
+        $incomeMoneyAmount = $orderPriceValue;
         if (!empty($payment_system_service_percentage)) {
             if ($web_service_price_percentage === ProductPriceTypeEnum::EXPRESS->value) {
                 // payment system calculate
-                $paymentSystemMoney = ($order_price * ($payment_system_service_percentage)) / 100;
+                $paymentSystemMoney = ($orderPriceValue * $payment_system_service_percentage) / 100;
                 $incomeMoneyAmount -= $paymentSystemMoney;
             }
         }
@@ -61,12 +69,13 @@ class ProductsOrderService
         $webServiceMoney = null;
         if (!empty($web_service_price_percentage)) {
             // web service calculate
-            $webServiceMoney = ($order_price * ($web_service_price_percentage)) / 100;
-            $merchant_money_amount = $incomeMoneyAmount - $webServiceMoney;
+            $webServiceMoney = ($orderPriceValue * $web_service_price_percentage) / 100;
+            $merchantMoneyValue = $incomeMoneyAmount - $webServiceMoney;
         }
 
+        $merchantMoneyAmount = $merchantMoneyValue ?? $merchant_money_amount;
 
-        $webServiceAndPaymentSystemMoneyAmount = $order_price - $merchant_money_amount;
+        $webServiceAndPaymentSystemMoneyAmount = $orderPriceValue - (float)$merchantMoneyAmount;
 
         $productsOrder = new ProductsOrder();
         $productsOrder->setOrderPrice($order_price);
@@ -75,7 +84,7 @@ class ProductsOrderService
         $productsOrder->setTransactionId($transaction_id);
         $productsOrder->setCustomerId($user_id);
         $productsOrder->setAuthorId($product->getAuthorId());
-        $productsOrder->setMerchantMoneyAmount($merchant_money_amount);
+        $productsOrder->setMerchantMoneyAmount((string)$merchantMoneyAmount);
         $productsOrder->setWebServicePricePercentage($web_service_price_percentage);
         $productsOrder->setWebServiceMoneyAmount($webServiceMoney);
         $productsOrder->setPaymentSystemServicePercentage($payment_system_service_percentage);

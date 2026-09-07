@@ -21,6 +21,11 @@ class LinkProductGenre extends Model
 {
     use HasCompositePrimaryKey;
 
+    /**
+     * Kompozit birlamchi kalit (HasCompositePrimaryKey trait).
+     *
+     * @var array<int, string>
+     */
     protected $primaryKey = ['product_id', 'genre_id'];
     public $incrementing = false;
 

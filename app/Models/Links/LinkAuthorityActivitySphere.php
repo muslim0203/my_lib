@@ -15,6 +15,11 @@ class LinkAuthorityActivitySphere extends Model
 
     public $timestamps = false;
 
+    /**
+     * Kompozit birlamchi kalit (HasCompositePrimaryKey trait).
+     *
+     * @var array<int, string>
+     */
     protected $primaryKey = ['authority_id', 'sphere_id'];
     public $incrementing = false;
 

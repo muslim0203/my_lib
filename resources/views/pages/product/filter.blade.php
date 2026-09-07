@@ -273,9 +273,9 @@
                                         @php if(!$item->isIsDeleted()): @endphp
                                         <div class="menu-item px-3">
                                             <a
-                                                href="{{ route('product.delete', ['id' => $item->getId()]) }}"
-                                                class="menu-link px-3"
-                                                data-action="{{ route('product.delete', ['id' => $item->getId()]) }}">
+                                                href="#"
+                                                class="menu-link px-3 product_delete"
+                                                data-action="{{ route('product.delete', ['id' => $item->getId()]) }}" data-value="{{ csrf_token() }}">
                                                 @lang('button.Delete')
                                             </a>
                                         </div>

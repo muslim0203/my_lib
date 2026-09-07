@@ -265,9 +265,9 @@
                                         <!--begin::Menu item-->
                                         <div class="menu-item px-3">
                                             <a
-                                                href="{{route('enum-language.delete', ['id' => $item->getId()]) }}"
+                                                href="#"
                                                 class="menu-link px-3 enum_language_delete"
-                                                data-action="{{ route('enum-language.delete', ['id' => $item->getId()]) }}">
+                                                data-action="{{ route('enum-language.delete', ['id' => $item->getId()]) }}" data-value="{{ csrf_token() }}">
                                                 @lang('button.Delete')
                                             </a>
                                         </div>

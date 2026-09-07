@@ -23,7 +23,7 @@ use App\Http\Controllers\Web\Questions\QuestionAnswerController;
 use App\Http\Controllers\Web\Questions\QuestionController;
 use App\Http\Controllers\Web\Report\ReportController;
 use App\Http\Controllers\Web\Request\RequestController;
-use App\Http\Middleware\VerifyCsrfToken;
+use App\Http\Middleware\LocalizationWeb;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,9 +31,17 @@ use Illuminate\Support\Facades\Route;
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| Admin panel marshrutlari.
+|
+| S2b (1): ilgari har bir guruh faqat `auth` bilan himoyalangan edi, ya'ni
+| `employee_id` to'ldirilgan istalgan foydalanuvchi paneldagi HAMMA amalni
+| bajara olardi. Endi har bir guruhda `can:<huquq>` middleware bor
+| (huquqlar Database\Seeders\PermissionSeeder da tuziladi).
+|
+| S2b (2): holatni o'zgartiruvchi barcha `Route::get(.../delete/...)`
+| marshrutlari `Route::delete(...)` ga o'tkazildi va
+| `->withoutMiddleware(VerifyCsrfToken::class)` chaqiruvlari olib tashlandi,
+| shuning uchun ular endi CSRF token talab qiladi.
 |
 */
 
@@ -45,6 +53,14 @@ Route::get('dashboard', function () {
     return view('pages.dashboard');
 })->middleware('auth');
 
+/*
+ * Xodimning O'Z profili. Bu yerda ataylab `employee.manage` talab
+ * qilinmaydi: moderator ham o'z profilini ko'ra/tahrirlay olishi kerak,
+ * aks holda panelga kirgan zahoti 403 oladi.
+ *
+ * Ochiq masala: editProfile/{id} va editUser/{id} `id` ni so'rovdan oladi
+ * (IDOR). Tuzatish kontroller egasiga tegishli - hisobotdagi taklifga qarang.
+ */
 Route::controller(EmployeeController::class)
     ->middleware(['auth'])
     ->group(function () {
@@ -66,143 +82,163 @@ Route::controller(EmployeeController::class)
     });
 
 Route::controller(EnumAcademicDegreesController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-academic-degree/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-degree.create');
 
         Route::post('enum-academic-degree/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-degree.store');
 
         Route::get('enum-academic-degree/filter', 'filter')
             ->name('enum-academic-degree.filter');
 
-        Route::get('/enum-academic-degree/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/enum-academic-degree/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-academic-degree.delete');
 
         Route::get('enum-academic-degree/view/{id}', 'view')
             ->name('enum-academic-degree.view');
 
         Route::get('enum-academic-degree/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-degree.update');
 
         Route::put('enum-academic-degree/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-degree.edit');
     });
 
 
 Route::controller(EnumAcademicPositionsController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-academic-position/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-position.create');
 
         Route::post('enum-academic-position/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-position.store');
 
         Route::get('enum-academic-position/filter', 'filter')
             ->name('enum-academic-position.filter');
 
-        Route::get('/enum-academic-position/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/enum-academic-position/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-academic-position.delete');
 
         Route::get('enum-academic-position/view/{id}', 'view')
             ->name('enum-academic-position.view');
 
         Route::get('enum-academic-position/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-position.update');
 
         Route::put('enum-academic-position/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-academic-position.edit');
     });
 
 // Enum categories
 Route::controller(EnumCategoriesController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
         Route::get('enum-categories/filter', 'filter')
             ->name('enum-categories.filter');
 
         Route::get('/enum-categories/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-categories.create');
 
         Route::get('/enum-categories/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-categories.update');
 
         Route::get('/enum-categories/view/{id}', 'view')
             ->name('enum-categories.view');
 
         Route::post('/enum-categories/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-categories.store');
 
         Route::put('/enum-categories/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-categories.edit');
 
-        Route::get('/enum-categories/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/enum-categories/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-categories.delete');
     });
 
 Route::controller(EnumEducationTypesController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-education-type/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-education-type.create');
 
         Route::post('enum-education-type/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-education-type.store');
 
         Route::get('enum-education-type/filter', 'filter')
             ->name('enum-education-type.filter');
 
-        Route::get('enum-education-type/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-education-type/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-education-type.delete');
 
         Route::get('enum-education-type/view/{id}', 'view')
             ->name('enum-education-type.view');
 
         Route::get('enum-education-type/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-education-type.update');
 
         Route::put('enum-education-type/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-education-type.edit');
     });
 
 Route::controller(EnumLanguagesController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-language/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-language.create');
 
         Route::post('enum-language/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-language.store');
 
         Route::get('enum-language/filter', 'filter')
             ->name('enum-language.filter');
 
-        Route::get('enum-language/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-language/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-language.delete');
 
         Route::get('enum-language/view/{id}', 'view')
             ->name('enum-language.view');
 
         Route::get('enum-language/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-language.update');
 
         Route::put('enum-language/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-language.edit');
     });
 
 Route::controller(AuthorityController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:request.view'])
     ->group(function () {
 
         Route::get('authority/filter', 'filter')
@@ -212,15 +248,17 @@ Route::controller(AuthorityController::class)
             ->name('authority.view');
 
         Route::post('authority/cancel/{id}', 'cancel')
+            ->middleware('can:request.moderate')
             ->name('authority.cancel');
 
         Route::post('authority/confirm/{id}', 'confirm')
+            ->middleware('can:request.moderate')
             ->name('authority.confirm');
 
     });
 
 Route::controller(AuthorController::class)
-    ->middleware('auth')
+    ->middleware(['auth', 'can:request.view'])
     ->group(function () {
 
         Route::get('author/filter', 'filter')
@@ -230,124 +268,142 @@ Route::controller(AuthorController::class)
             ->name('author.view');
 
         Route::post('author/confirm/{id}', 'confirm')
+            ->middleware('can:request.moderate')
             ->name('author.confirm');
 
         Route::post('author/cancel/{id}', 'cancel')
+            ->middleware('can:request.moderate')
             ->name('author.cancel');
 
     });
 
 Route::controller(EnumProductTagsController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-product-tag/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-product-tag.create');
 
         Route::post('enum-product-tag/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-product-tag.store');
 
         Route::get('enum-product-tag/filter', 'filter')
             ->name('enum-product-tag.filter');
 
-        Route::get('enum-product-tag/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-product-tag/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-product-tag.delete');
 
         Route::get('enum-product-tag/view/{id}', 'view')
             ->name('enum-product-tag.view');
 
         Route::get('enum-product-tag/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-product-tag.update');
 
         Route::put('enum-product-tag/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-product-tag.edit');
     });
 
 
 Route::controller(EnumProductTypesController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-product-type/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-product-type.create');
 
         Route::post('enum-product-type/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-product-type.store');
 
         Route::get('enum-product-type/filter', 'filter')
             ->name('enum-product-type.filter');
 
-        Route::get('enum-product-type/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-product-type/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-product-type.delete');
 
         Route::get('enum-product-type/view/{id}', 'view')
             ->name('enum-product-type.view');
 
         Route::get('enum-product-type/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-product-type.update');
 
         Route::put('enum-product-type/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-product-type.edit');
     });
 
 Route::controller(EnumProductGenresController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-product-genre/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-product-genre.create');
 
         Route::post('enum-product-genre/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-product-genre.store');
 
         Route::get('enum-product-genre/filter', 'filter')
             ->name('enum-product-genre.filter');
 
-        Route::get('enum-product-genre/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-product-genre/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-product-genre.delete');
 
         Route::get('enum-product-genre/view/{id}', 'view')
             ->name('enum-product-genre.view');
 
         Route::get('enum-product-genre/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-product-genre.update');
 
         Route::put('enum-product-genre/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-product-genre.edit');
     });
 
 Route::controller(EnumProductStatusController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:enum.view'])
     ->group(function () {
 
         Route::get('enum-product-status/create', 'create')
+            ->middleware('can:enum.manage')
             ->name('enum-product-status.create');
 
         Route::post('enum-product-status/store', 'store')
+            ->middleware('can:enum.manage')
             ->name('enum-product-status.store');
 
         Route::get('enum-product-status/filter', 'filter')
             ->name('enum-product-status.filter');
 
-        Route::get('enum-product-status/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('enum-product-status/delete/{id}', 'destroy')
+            ->middleware('can:enum.delete')
             ->name('enum-product-status.delete');
 
         Route::get('enum-product-status/view/{id}', 'view')
             ->name('enum-product-status.view');
 
         Route::get('enum-product-status/update/{id}', 'update')
+            ->middleware('can:enum.manage')
             ->name('enum-product-status.update');
 
         Route::put('enum-product-status/edit/{id}', 'edit')
+            ->middleware('can:enum.manage')
             ->name('enum-product-status.edit');
     });
 
 Route::controller(RequestController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:request.view'])
     ->group(function () {
 
         Route::get('request/filter/{type?}', 'filter')
@@ -357,178 +413,205 @@ Route::controller(RequestController::class)
             ->name('request.view');
 
         Route::post('request/reject/{id}', 'reject')
+            ->middleware('can:request.moderate')
             ->name('request.reject');
 
         Route::post('request/confirm/{id}', 'confirm')
+            ->middleware('can:request.moderate')
             ->name('request.confirm');
 
     });
 
 Route::controller(CompanyController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:company.view'])
     ->group(function () {
         Route::get('company/filter', 'filter')
             ->name('company.filter');
 
         Route::get('/company/create', 'create')
+            ->middleware('can:company.manage')
             ->name('company.create');
 
         Route::get('/company/update/{id}', 'update')
+            ->middleware('can:company.manage')
             ->name('company.update');
 
         Route::get('/company/view/{id}', 'view')
             ->name('company.view');
 
         Route::post('/company/store', 'store')
+            ->middleware('can:company.manage')
             ->name('company.store');
 
         Route::put('/company/edit/{id}', 'edit')
+            ->middleware('can:company.manage')
             ->name('company.edit');
 
-        Route::get('/company/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/company/delete/{id}', 'destroy')
+            ->middleware('can:company.delete')
             ->name('company.delete');
     });
 
 Route::controller(CompanyFileController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:company.view'])
     ->group(function () {
         Route::get('company-file/filter', 'filter')
             ->name('company-file.filter');
 
         Route::get('/company-file/create', 'create')
+            ->middleware('can:company.manage')
             ->name('company-file.create');
 
         Route::get('/company-file/update/{id}', 'update')
+            ->middleware('can:company.manage')
             ->name('company-file.update');
 
         Route::get('/company-file/view/{id}', 'view')
             ->name('company-file.view');
 
         Route::post('/company-file/store', 'store')
+            ->middleware('can:company.manage')
             ->name('company-file.store');
 
         Route::put('/company-file/edit/{id}', 'edit')
+            ->middleware('can:company.manage')
             ->name('company-file.edit');
 
-        Route::get('/company-file/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/company-file/delete/{id}', 'destroy')
+            ->middleware('can:company.delete')
             ->name('company-file.delete');
     });
 
 Route::controller(CompanyPartnerController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:company.view'])
     ->group(function () {
         Route::get('company-partner/filter', 'filter')
             ->name('company-partner.filter');
 
         Route::get('/company-partner/create', 'create')
+            ->middleware('can:company.manage')
             ->name('company-partner.create');
 
         Route::get('/company-partner/update/{id}', 'update')
+            ->middleware('can:company.manage')
             ->name('company-partner.update');
 
         Route::get('/company-partner/view/{id}', 'view')
             ->name('company-partner.view');
 
         Route::post('/company-partner/store', 'store')
+            ->middleware('can:company.manage')
             ->name('company-partner.store');
 
         Route::put('/company-partner/edit/{id}', 'edit')
+            ->middleware('can:company.manage')
             ->name('company-partner.edit');
 
-        Route::get('/company-partner/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/company-partner/delete/{id}', 'destroy')
+            ->middleware('can:company.delete')
             ->name('company-partner.delete');
     });
 
 Route::controller(CompanySocialNetworkController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:company.view'])
     ->group(function () {
         Route::get('company-social-network/filter', 'filter')
             ->name('company-social-network.filter');
 
         Route::get('/company-social-network/create', 'create')
+            ->middleware('can:company.manage')
             ->name('company-social-network.create');
 
         Route::get('/company-social-network/update/{id}', 'update')
+            ->middleware('can:company.manage')
             ->name('company-social-network.update');
 
         Route::get('/company-social-network/view/{id}', 'view')
             ->name('company-social-network.view');
 
         Route::post('/company-social-network/store', 'store')
+            ->middleware('can:company.manage')
             ->name('company-social-network.store');
 
         Route::put('/company-social-network/edit/{id}', 'edit')
+            ->middleware('can:company.manage')
             ->name('company-social-network.edit');
 
-        Route::get('/company-social-network/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/company-social-network/delete/{id}', 'destroy')
+            ->middleware('can:company.delete')
             ->name('company-social-network.delete');
     });
 
 
 Route::controller(QuestionController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:question.view'])
     ->group(function () {
         Route::get('question/filter', 'filter')
             ->name('question.filter');
 
         Route::get('/question/create', 'create')
+            ->middleware('can:question.manage')
             ->name('question.create');
 
         Route::get('/question/update/{id}', 'update')
+            ->middleware('can:question.manage')
             ->name('question.update');
 
         Route::get('/question/view/{id}', 'view')
             ->name('question.view');
 
         Route::post('/question/store', 'store')
+            ->middleware('can:question.manage')
             ->name('question.store');
 
         Route::put('/question/edit/{id}', 'edit')
+            ->middleware('can:question.manage')
             ->name('question.edit');
 
-        Route::get('/question/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/question/delete/{id}', 'destroy')
+            ->middleware('can:question.delete')
             ->name('question.delete');
     });
 
 Route::controller(QuestionAnswerController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:question.view'])
     ->group(function () {
         Route::get('question-answer/filter', 'filter')
             ->name('question-answer.filter');
 
         Route::get('/question-answer/create', 'create')
+            ->middleware('can:question.manage')
             ->name('question-answer.create');
 
         Route::get('/question-answer/update/{id}', 'update')
+            ->middleware('can:question.manage')
             ->name('question-answer.update');
 
         Route::get('/question-answer/view/{id}', 'view')
             ->name('question-answer.view');
 
         Route::post('/question-answer/store', 'store')
+            ->middleware('can:question.manage')
             ->name('question-answer.store');
 
         Route::put('/question-answer/edit/{id}', 'edit')
+            ->middleware('can:question.manage')
             ->name('question-answer.edit');
 
-        Route::get('/question-answer/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/question-answer/delete/{id}', 'destroy')
+            ->middleware('can:question.delete')
             ->name('question-answer.delete');
     });
 
 Route::controller(ProductController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:product.view'])
     ->group(function () {
 
         Route::get('product/filter', 'filter')
             ->name('product.filter');
 
-        Route::get('product/delete/{id}', 'delete')
+        Route::delete('product/delete/{id}', 'delete')
+            ->middleware('can:product.delete')
             ->name('product.delete');
 
         Route::get('product/view/{id}', 'view')
@@ -536,33 +619,37 @@ Route::controller(ProductController::class)
     });
 
 Route::controller(MainBannerController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:banner.view'])
     ->group(function () {
         Route::get('main-banner/filter', 'filter')
             ->name('banner.filter');
 
         Route::get('/main-banner/create', 'create')
+            ->middleware('can:banner.manage')
             ->name('banner.create');
 
         Route::get('/main-banner/update/{id}', 'update')
+            ->middleware('can:banner.manage')
             ->name('banner.update');
 
         Route::get('/main-banner/view/{id}', 'view')
             ->name('banner.view');
 
         Route::post('/main-banner/store', 'store')
+            ->middleware('can:banner.manage')
             ->name('banner.store');
 
         Route::put('/main-banner/edit/{id}', 'edit')
+            ->middleware('can:banner.manage')
             ->name('banner.edit');
 
-        Route::get('/main-banner/delete/{id}', 'destroy')
-            ->withoutMiddleware(VerifyCsrfToken::class)
+        Route::delete('/main-banner/delete/{id}', 'destroy')
+            ->middleware('can:banner.delete')
             ->name('banner.delete');
     });
 
 Route::controller(ReportController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:report.view'])
     ->group(function () {
         Route::get('/report/user-register-search', 'userRegisterSearch')
             ->name('report.userRegisterSearch');
@@ -579,25 +666,30 @@ Route::controller(ReportController::class)
 
 
 Route::controller(ProverbController::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:proverb.view'])
     ->group(function () {
 
         Route::get('proverb/create', 'create')
+            ->middleware('can:proverb.manage')
             ->name('proverb.create');
 
         Route::post('proverb/store', 'store')
+            ->middleware('can:proverb.manage')
             ->name('proverb.store');
 
         Route::get('proverb/filter', 'filter')
             ->name('proverb.filter');
 
         Route::get('proverb/edit/{id}', 'edit')
+            ->middleware('can:proverb.manage')
             ->name('proverb.edit');
 
         Route::put('proverb/update/{id}', 'update')
+            ->middleware('can:proverb.manage')
             ->name('proverb.update');
 
-        Route::get('proverb/delete/{id}', 'delete')
+        Route::delete('proverb/delete/{id}', 'delete')
+            ->middleware('can:proverb.delete')
             ->name('proverb.delete');
 
         Route::get('proverb/view/{id}', 'view')
@@ -605,14 +697,30 @@ Route::controller(ProverbController::class)
     });
 
 
-Route::get('language/{locale?}', function ($locale) {
-    app()->setLocale($locale);
-    session()->put('locale', $locale);
+/*
+ * S2b (3): ikkinchi darajali SQL injection.
+ *
+ * Ilgari URL segmenti hech qanday tekshiruvsiz sessiyaga yozilardi va
+ * LocalizationWeb uni har bir so'rovda `App::setLocale()` ga uzatardi;
+ * App\Core\Helpers\Lang\LanguageHelper esa uni SQL USTUN NOMIGA
+ * aylantirardi (App\Core\Filters\Reports\*, ProductOrderSearch).
+ *
+ * Endi qiymat App\Core\Enums\LanguageEnum bo'yicha qat'iy tekshiriladi
+ * (marshrut namunasi + LocalizationWeb::sanitize), ro'yxatda yo'q qiymat
+ * sessiyaga umuman tushmaydi.
+ */
+Route::get('language/{locale?}', function (?string $locale = null) {
+    $locale = LocalizationWeb::sanitize($locale);
+
+    if ($locale !== null) {
+        app()->setLocale($locale);
+        session()->put('locale', $locale);
+    }
+
     return redirect()->back();
 })
+    ->where('locale', '[A-Za-z]{2}')
     ->middleware(['auth'])
     ->name('locale');
 
 require __DIR__ . '/auth.php';
-
-

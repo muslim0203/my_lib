@@ -22,6 +22,11 @@ class LinkProductCategories extends Model
 
     protected $table = 'link_product_categories';
 
+    /**
+     * Kompozit birlamchi kalit (HasCompositePrimaryKey trait).
+     *
+     * @var array<int, string>
+     */
     protected $primaryKey = ['product_id', 'category_id'];
     public $incrementing = false;
 

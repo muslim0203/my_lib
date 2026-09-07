@@ -257,9 +257,9 @@
                                         <!--end::Menu item-->
                                         <!--begin::Menu item-->
                                         <div class="menu-item px-3">
-                                            <a href="{{ route('proverb.delete', ['id' => $item->getId()]) }}"
-                                                class="menu-link px-3"
-                                                data-action="{{ route('proverb.delete', ['id' => $item->getId()]) }}">
+                                            <a href="#"
+                                                class="menu-link px-3 proverb_delete"
+                                                data-action="{{ route('proverb.delete', ['id' => $item->getId()]) }}" data-value="{{ csrf_token() }}">
                                                 @lang('button.Delete')
                                             </a>
                                         </div>

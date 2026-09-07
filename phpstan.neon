@@ -8,12 +8,18 @@ parameters:
         - tests
         - config
         - database
-    level: 1
+    level: 3
     ignoreErrors:
+        # Bu modellar ataylab kompozit birlamchi kalit ishlatadi
+        # (App\Core\Helpers\Traits\HasCompositePrimaryKey). Eloquent
+        # bazaviy modelida $primaryKey `string` deb belgilangan, shuning
+        # uchun kovariantlik xatosi muqarrar. Bu bostirish emas - xato
+        # aynan shu xabar va aynan shu kataloq bilan cheklangan.
+        -
+            message: '#PHPDoc type array<int, string> of property .* is not covariant with PHPDoc type string of overridden property .*primaryKey#'
+            path: app/Models/Links
     excludePaths:
+        # Auth fayllari bo'yicha istisnolar OLIB TASHLANDI: aynan o'sha
+        # fayllar xavfsizlik uchun eng muhimi va tahlildan chetda
+        # qolmasligi kerak edi.
         - routes/console.php
-        - app/Http/Middleware/JwtAuthenticate
-        - app/Http/Controllers/Api/Auth/AuthController
-        - database/seeders
-        - database/factories
-    treatPhpDocTypesAsCertain: false

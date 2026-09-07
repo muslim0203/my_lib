@@ -15,7 +15,7 @@ class LinkUserProductListResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array<int, ProductViewResource>
      */
     public function toArray(Request $request): array
     {

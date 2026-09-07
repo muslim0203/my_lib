@@ -3,6 +3,12 @@
 Laravel 10 (PHP 8.2+) marketplace: JWT API va Blade admin paneli.
 Ma'lumotlar bazasi **PostgreSQL**, navbat **RabbitMQ**.
 
+Repozitoriy: <https://github.com/muslim0203/my_lib>
+
+```bash
+git clone https://github.com/muslim0203/my_lib.git
+```
+
 > Diqqat: ilova PostgreSQL uchun yozilgan. Migratsiyalar va bir qator
 > so'rovlar SQLite'da **ishlamaydi** (quyida "Ma'lum cheklovlar" ga qarang).
 

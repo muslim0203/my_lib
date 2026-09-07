@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property boolean $enabled
  *
  * @property-read Company $company
- * @property-read File $logo
+ * @property-read File|null $logo
  */
 class CompanyPartner extends Model
 {

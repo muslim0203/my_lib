@@ -29,22 +29,24 @@ class LinkAuthorSubscriberService
          */
         $user = Auth::user();
 
-        return $this->transaction->wrap(function () use ($subscriberRequest, $user) {
+        $authorId = $subscriberRequest->integer('author_id');
+
+        return $this->transaction->wrap(function () use ($subscriberRequest, $user, $authorId) {
             if ($subscriberRequest->post('subscribe')) {
 
 
-                if ($this->linkAuthorSubscriberRepository->checkSubscribe($subscriberRequest->post('author_id'), $user->getId())) {
+                if ($this->linkAuthorSubscriberRepository->checkSubscribe($authorId, $user->getId())) {
                     abort(400, __('client.Already subscribed!'));
                 }
 
                 $model = new LinkAuthorSubscribers();
-                $model->setAuthorId($subscriberRequest->post('author_id'));
+                $model->setAuthorId($authorId);
                 $model->setSubscriberId($user->getId());
                 $this->linkAuthorSubscriberRepository->save($model);
 
             } else {
-                if ($this->linkAuthorSubscriberRepository->checkSubscribe($subscriberRequest->post('author_id'), $user->getId())) {
-                    $this->linkAuthorSubscriberRepository->delete($subscriberRequest->post('author_id'), $user->getId());
+                if ($this->linkAuthorSubscriberRepository->checkSubscribe($authorId, $user->getId())) {
+                    $this->linkAuthorSubscriberRepository->delete($authorId, $user->getId());
                 }
             }
         });

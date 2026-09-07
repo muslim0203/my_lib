@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read Author $author
  * @property-read self|null $parent
  * @property-read self[] $child
- * @property-read User $user
+ * @property-read User|null $user
  */
 class AuthorComments extends Model
 {

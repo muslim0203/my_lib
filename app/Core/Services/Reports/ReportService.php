@@ -14,6 +14,7 @@ use App\Models\Products\ProductsOrder;
 use App\Models\Users\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class ReportService implements ReportInterface
 {
@@ -50,7 +51,7 @@ class ReportService implements ReportInterface
     public function payList(): ProductsOrder|array
     {
         if (!Auth::check()) {
-            abort(__('client.User is not logged in.'));
+            abort(ResponseAlias::HTTP_UNAUTHORIZED, __('client.User is not logged in.'));
         }
 
         /**

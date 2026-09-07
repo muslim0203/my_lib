@@ -45,7 +45,7 @@ class ProductCreateRequest extends FormRequest
         ]);
 
         if (intval($this->post('price_type_id')) !== ProductPriceTypeEnum::FREE->value) {
-            $priceType = (new ProductPriceTypeRepository())->getById($this->post('price_type_id'));
+            $priceType = (new ProductPriceTypeRepository())->getById($this->integer('price_type_id'));
             $this->merge([
                 'price_value' => (string)($this->input('price_value') * ($priceType->getPercentage() / 100) + $this->input('price_value')),
             ]);

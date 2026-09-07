@@ -47,9 +47,9 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property string|null $inn
  *
  * @property-read User $user
- * @property-read EnumAcademicPosition $academicPosition
- * @property-read EnumAcademicDegree $academicDegree
- * @property-read EnumEducationType $educationType
+ * @property-read EnumAcademicPosition|null $academicPosition
+ * @property-read EnumAcademicDegree|null $academicDegree
+ * @property-read EnumEducationType|null $educationType
  * @property-read ProcessStep $step
  * @property-read AuthorProfileFile $profileFile
  * @property-read File $extraFiles

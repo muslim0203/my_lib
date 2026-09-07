@@ -90,7 +90,7 @@ class PaymeService implements PaymentInterface
                         $order->setTransactionId($request['params']['id']);
                         $order->setTransactionTime((string)$request['params']['time']);
                         $order->setTransactionNo($transactionNo);
-                        $order->setTransactionCreateTime($create_time);
+                        $order->setTransactionCreateTime((string)$create_time);
                         $order->setState(PaymePaymentStateEnum::CREATE_TRANSACTION->value);
                         $orderRepository->save($order);
                     } else {
@@ -182,7 +182,7 @@ class PaymeService implements PaymentInterface
             $cancelTransaction = $request['params']['reason'] == 3 ? '-1' : '-2';
             $order->setState($cancelTransaction);
             $order->setCancelReason($request['params']['reason']);
-            $order->setTransactionCancelTime(round(microtime(true) * 1000));
+            $order->setTransactionCancelTime((string)round(microtime(true) * 1000));
             if ($cancelTransaction === '-1') {
                 $order->setTransactionPerformTime('0');
             }
@@ -267,7 +267,7 @@ class PaymeService implements PaymentInterface
         if ($order->isEmptyPerformTime()) {
             $perform_time = round(microtime(true) * 1000);
             $order->setState(PaymePaymentStateEnum::PERFORM_TRANSACTION->value);
-            $order->setTransactionPerformTime($perform_time);
+            $order->setTransactionPerformTime((string)$perform_time);
             $orderRepository->save($order);
 
             $product = $order->product;
@@ -283,7 +283,7 @@ class PaymeService implements PaymentInterface
                 $order->getTransactionId(),
                 $order->getClientId(),
                 $order->getAmount(),
-                $product->getPriceMerchant(),
+                (string)$product->getPriceMerchant(),
                 $product->priceType->getPercentage(),
                 PayPercentageServiceEnum::PAYME_PERCENTAGE->value
             );
@@ -305,7 +305,7 @@ class PaymeService implements PaymentInterface
     public function getRedirectUrl(PaymeRedirectUrlFormRequest $paymeRedirectUrlFormRequest): ?string
     {
         if (Auth::check()) {
-            $order = $this->orderInsertOrUpdate($paymeRedirectUrlFormRequest->post('product_id'));
+            $order = $this->orderInsertOrUpdate($paymeRedirectUrlFormRequest->integer('product_id'));
 
             /**
              * @var User $user
@@ -381,12 +381,12 @@ class PaymeService implements PaymentInterface
         if (empty($order)) {
             $order = new PaymePayment();
             $order->setProductId($product->getId());
-            $order->setAmount($price);
+            $order->setAmount((string)$price);
             $order->setClientId($user->getId());
             $order->setState(PaymePaymentStateEnum::CHECK_PERFORM_TRANSACTION->value);
         } else if (!$order->isFinished()) {
             $order->setState(PaymePaymentStateEnum::CHECK_PERFORM_TRANSACTION->value);
-            $order->setAmount($price);
+            $order->setAmount((string)$price);
             $order->setTransactionCancelTime(null);
             $order->setTransactionPerformTime(null);
             $order->setTransactionCreateTime(null);

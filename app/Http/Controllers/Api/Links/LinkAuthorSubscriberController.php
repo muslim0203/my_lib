@@ -21,7 +21,7 @@ class LinkAuthorSubscriberController extends Controller
     {
 
         return Success::send("Send Author Subscriber Count", [
-            'count' => $linkAuthorSubscriberRepository->subscriberCount($request->post('author_id'))
+            'count' => $linkAuthorSubscriberRepository->subscriberCount($request->integer('author_id'))
         ]);
     }
 

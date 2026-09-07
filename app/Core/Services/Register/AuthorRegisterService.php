@@ -141,7 +141,7 @@ class AuthorRegisterService implements Register
          */
         $userRepository = app(UserRepository::class);
 
-        return $userRepository->get($authorShowRequest->post('author_id'));
+        return $userRepository->get($authorShowRequest->integer('author_id'));
 
     }
 

@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $phone
  * @property string|null $created_at
  * @property boolean $enabled
- * @property-read CompanyFile $companyFile
+ * @property-read CompanyFile|null $companyFile
  */
 
 class Company extends Model

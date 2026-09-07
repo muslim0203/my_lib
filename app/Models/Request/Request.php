@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $created_at
  * @property string $updated_at
  *
- * @property-read ProcessStep $step
+ * @property-read ProcessStep|null $step
  * @property-read User $author
  * @property-read User|null $rejectAuthor
  * @property-read User|null $confirmAuthor

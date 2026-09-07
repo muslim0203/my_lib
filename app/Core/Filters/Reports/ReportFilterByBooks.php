@@ -28,7 +28,14 @@ class ReportFilterByBooks
          */
         $user = Auth::user();
 
-        $sort = $formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_LOT_BOUGHT->value ? 'desc' : 'asc';
+        // So'rovdagi qiymat satr sifatida keladi, ReportTypeEnum esa int
+        // asosida. Ilgari bu yerda `post(...) === Enum->value` yozilgan edi,
+        // ya'ni "3" === 3 -> har doim false: tanlangan hisobot turi umuman
+        // e'tiborga olinmasdi. ReportService::purchaseStatistics() allaqachon
+        // intval() ishlatadi - shu semantika bu yerda ham tiklanadi.
+        $reportTypeId = $formRequest->integer('report_type_id');
+
+        $sort = $reportTypeId === ReportTypeEnum::BOOKS_LOT_BOUGHT->value ? 'desc' : 'asc';
 
         // $title is a COLUMN IDENTIFIER and therefore cannot be bound; it is
         // allow-listed against App\Core\Enums\LanguageEnum in LanguageHelper.
@@ -39,7 +46,7 @@ class ReportFilterByBooks
             'author_id' => $user->getId(),
         ];
 
-        if ($formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_FREE->value) {
+        if ($reportTypeId === ReportTypeEnum::BOOKS_FREE->value) {
             $sqlQuery = "
                 with report as (
                     select
@@ -62,7 +69,7 @@ class ReportFilterByBooks
                         inner join files f on f.id = p.wrapper_file_id
                     )
             ";
-        } else if ($formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_NOT_BOUGHT->value) {
+        } else if ($reportTypeId === ReportTypeEnum::BOOKS_NOT_BOUGHT->value) {
             // A second, distinct placeholder name is required: PDO does not
             // reliably accept the same named parameter twice in one statement.
             $bindings['author_id_outer'] = $user->getId();

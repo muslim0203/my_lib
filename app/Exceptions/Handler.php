@@ -161,7 +161,9 @@ class Handler extends ExceptionHandler
         }
 
         try {
-            $model = (string) $e->getModel();
+            // getModel() modeli o'rnatilmagan istisnolarda bo'sh satr
+            // qaytaradi; vendor annotatsiyasi buni hisobga olmaydi.
+            $model = trim((string) $e->getModel());
 
             if ($model === '') {
                 return __('client.Data is not found');

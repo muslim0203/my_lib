@@ -58,15 +58,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property boolean $has_audio_file
  * @property boolean $is_download
  *
- * @property-read EnumProductStatus $status
- * @property-read ProcessStep $step
+ * @property-read EnumProductStatus|null $status
+ * @property-read ProcessStep|null $step
  * @property-read self|null $parent
  * @property-read File $wrapperFile
  * @property-read File $sourceFile
- * @property-read ProductPrice $price
- * @property-read ProductPriceType $priceType
- * @property-read User $author
- * @property-read User $confirmAuthor
+ * @property-read ProductPrice|null $price
+ * @property-read ProductPriceType|null $priceType
+ * @property-read User|null $author
+ * @property-read User|null $confirmAuthor
  * @property-read ProductDiscount|null $discount
  * @property-read ProductAssessment[]|Collection $assessments
  * @property-read LinkProductType[] $productType

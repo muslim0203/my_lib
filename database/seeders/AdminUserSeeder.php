@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Core\Helpers\Transaction;
 use App\Models\Users\Employee;
 use App\Models\Users\User;
+use Database\Seeders\Concerns\WritesConsoleOutput;
 use Illuminate\Database\Seeder;
 
 /**
@@ -20,6 +21,8 @@ use Illuminate\Database\Seeder;
  */
 class AdminUserSeeder extends Seeder
 {
+    use WritesConsoleOutput;
+
     public function run(Transaction $transaction): void
     {
         // config:cache yoqilganda env() null qaytaradi, shuning uchun
@@ -29,7 +32,7 @@ class AdminUserSeeder extends Seeder
         $password = (string)config('auth.admin_initial.password', '');
 
         if (User::query()->where('username', $username)->exists()) {
-            $this->command?->info(
+            $this->writeInfo(
                 "Admin '{$username}' allaqachon mavjud. Hech narsa o'zgartirilmadi."
             );
 
@@ -76,6 +79,6 @@ class AdminUserSeeder extends Seeder
             $user->assignRole(PermissionSeeder::ROLE_ADMIN);
         });
 
-        $this->command?->info("Admin '{$username}' yaratildi.");
+        $this->writeInfo("Admin '{$username}' yaratildi.");
     }
 }

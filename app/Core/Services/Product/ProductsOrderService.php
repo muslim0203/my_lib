@@ -85,11 +85,11 @@ class ProductsOrderService
         $productsOrder->setCustomerId($user_id);
         $productsOrder->setAuthorId($product->getAuthorId());
         $productsOrder->setMerchantMoneyAmount((string)$merchantMoneyAmount);
-        $productsOrder->setWebServicePricePercentage($web_service_price_percentage);
-        $productsOrder->setWebServiceMoneyAmount($webServiceMoney);
+        $productsOrder->setWebServicePricePercentage((string)$web_service_price_percentage);
+        $productsOrder->setWebServiceMoneyAmount($webServiceMoney === null ? null : (string)$webServiceMoney);
         $productsOrder->setPaymentSystemServicePercentage($payment_system_service_percentage);
-        $productsOrder->setPaymentSystemServiceMoneyAmount($paymentSystemMoney);
-        $productsOrder->setWebServiceAndPaymentSystemMoneyAmount($webServiceAndPaymentSystemMoneyAmount);
+        $productsOrder->setPaymentSystemServiceMoneyAmount($paymentSystemMoney === null ? null : (string)$paymentSystemMoney);
+        $productsOrder->setWebServiceAndPaymentSystemMoneyAmount((string)$webServiceAndPaymentSystemMoneyAmount);
         $this->productsOrderRepository->save($productsOrder);
 
     }

@@ -28,14 +28,19 @@ class ReportFilterByBenefit
          */
         $user = Auth::user();
 
-        $sort =
-            $formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_LOT_BENEFIT_BOUGHT->value
-                ? 'desc'
-                : (
-            $formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_LOW_BENEFIT_BOUGHT->value
-                ? 'asc'
-                : ($formRequest->post('report_type_id') === ReportTypeEnum::BOOKS_LOT_BOUGHT->value ? 'desc' : 'asc')
-            );
+        // So'rovdagi qiymat satr sifatida keladi, ReportTypeEnum esa int
+        // asosida. Ilgari bu yerda `post(...) === Enum->value` yozilgan edi,
+        // ya'ni "3" === 3 -> har doim false: tanlangan hisobot turi umuman
+        // e'tiborga olinmasdi. ReportService::purchaseStatistics() allaqachon
+        // intval() ishlatadi - shu semantika bu yerda ham tiklanadi.
+        $reportTypeId = $formRequest->integer('report_type_id');
+
+        $sort = match ($reportTypeId) {
+            ReportTypeEnum::BOOKS_LOT_BENEFIT_BOUGHT->value => 'desc',
+            ReportTypeEnum::BOOKS_LOW_BENEFIT_BOUGHT->value => 'asc',
+            ReportTypeEnum::BOOKS_LOT_BOUGHT->value => 'desc',
+            default => 'asc',
+        };
 
         // $title is a COLUMN IDENTIFIER and therefore cannot be bound; it is
         // allow-listed against App\Core\Enums\LanguageEnum in LanguageHelper.

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Users\User;
+use Database\Seeders\Concerns\WritesConsoleOutput;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -29,6 +30,8 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class RoleSeeder extends Seeder
 {
+    use WritesConsoleOutput;
+
     public function run(): void
     {
         $this->callOnce(PermissionSeeder::class);
@@ -56,7 +59,7 @@ class RoleSeeder extends Seeder
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->command?->info(
+        $this->writeInfo(
             "RoleSeeder: {$granted} ta xodim-foydalanuvchiga `admin` roli berildi, "
             . "{$skipped} tasida rol allaqachon bor edi (tegilmadi)."
         );

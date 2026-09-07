@@ -140,8 +140,9 @@ Mavjud o'rnatishda:
 ## 5. Testlar
 
 ```bash
-vendor/bin/phpunit    # mahalliy PHP bilan
-make test             # CI bilan bir xil konteyner muhitida
+vendor/bin/phpunit                      # testlar
+vendor/bin/phpstan analyse              # statik tahlil (daraja 5)
+make test                               # CI bilan bir xil konteyner muhitida
 ```
 
 Testlar alohida, xotiradagi bazadan foydalanadi va ishlab chiqish

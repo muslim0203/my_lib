@@ -31,9 +31,14 @@ class PurchaseListResource extends JsonResource
              */
             $clickPaymentRepository = app(ClickPaymentRepository::class);
 
-            $clickPayment = $clickPaymentRepository->findByClickTransId($this->getTransactionId());
+            // findByClickTransId() null qaytarishi mumkin. Ilgari `?? 0`
+            // metod CHAQIRILGANDAN keyin turardi, ya'ni to'lov topilmasa
+            // fatal xato berardi. Endi tekshiruv obyektning o'ziga qo'yildi.
+            $clickPayment = $clickPaymentRepository->findByClickTransId(
+                (int)$this->getTransactionId()
+            );
 
-            $amount = $clickPayment->getAmount() ?? 0;
+            $amount = $clickPayment?->getAmount() ?? 0;
         } else if ($this->getPaymentType() === PaymentTypeEnum::TYPE_PAYME->value) {
             /**
              * @var PaymePaymentRepository $paymePaymentRepository
@@ -41,7 +46,9 @@ class PurchaseListResource extends JsonResource
             $paymePaymentRepository = app(PaymePaymentRepository::class);
             $paymePayment = $paymePaymentRepository->getByTransactionId($this->getTransactionId());
 
-            $amount = $paymePayment->getAmount() ?? 0;
+            // getByTransactionId() firstOrFail() ishlatadi, ya'ni null
+            // qaytarmaydi - `?? 0` shohobchasi hech qachon bajarilmasdi.
+            $amount = $paymePayment->getAmount();
         }
 
         return [

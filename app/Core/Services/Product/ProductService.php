@@ -196,7 +196,10 @@ class ProductService implements ProductContract
     public function authorProductList(AuthorProductRequest $authorProductRequest): Collection|array
     {
         $authorProductRequest->validated();
-        return $this->productRepository->getAuthorProductList($authorProductRequest->post('author_id'), $authorProductRequest->post('type_id'));
+        return $this->productRepository->getAuthorProductList(
+            $authorProductRequest->integer('author_id'),
+            $authorProductRequest->integer('type_id')
+        );
     }
 
     /**
@@ -316,8 +319,8 @@ class ProductService implements ProductContract
                 PaymentTypeEnum::TYPE_FREE->value,
                 Str::random(30),
                 $user->getId(),
-                0,
-                0,
+                '0',
+                '0',
                 0
             );
         } catch (UniqueConstraintViolationException) {

@@ -64,12 +64,12 @@ class ClickService implements ClickContract
             $clickPayment->setServiceId(config('click.service_id'));
             $clickPayment->setProductId($product->getId());
             $clickPayment->setUserId($user->getId());
-            $clickPayment->setAmount($price);
+            $clickPayment->setAmount((string)$price);
         } elseif (!$clickPayment->isConfirmPay()) {
             $clickPayment->setServiceId(config('click.service_id'));
             $clickPayment->setProductId($product->getId());
             $clickPayment->setUserId($user->getId());
-            $clickPayment->setAmount($price);
+            $clickPayment->setAmount((string)$price);
         } else {
             abort(403, __('client.Payment already confirmed'));
         }
@@ -148,10 +148,10 @@ class ClickService implements ClickContract
         $productsOrderService->create(
             $clickPayment->getProductId(),
             PaymentTypeEnum::TYPE_CLICK->value,
-            $clickPayment->getClickTransId(),
+            (string)$clickPayment->getClickTransId(),
             $clickPayment->getUserId(),
             $clickPayment->getAmount(),
-            $product->getPriceMerchant(),
+            (string)$product->getPriceMerchant(),
             $product->priceType->getPercentage()
         );
 

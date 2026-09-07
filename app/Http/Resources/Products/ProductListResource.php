@@ -34,14 +34,15 @@ class ProductListResource extends JsonResource
 
         $author = [];
 
-        if (!empty($this->author?->merchant?->model)) {
+        // Bog'lanish zanjiri bir marta o'qiladi. Ilgari u to'rt marta
+        // takrorlanardi va `!empty()` shartidan keyingi `?->` lar
+        // baribir ortiqcha edi.
+        $authorModel = $this->author?->merchant?->model;
 
-            if ($this->author?->merchant?->model instanceof Author) {
-                $author = new AuthorListResource($this->author?->merchant?->model);
-            } else if ($this->author?->merchant?->model instanceof Authority) {
-                $author = new AuthorityListResource($this->author?->merchant?->model);
-            }
-
+        if ($authorModel instanceof Author) {
+            $author = new AuthorListResource($authorModel);
+        } elseif ($authorModel instanceof Authority) {
+            $author = new AuthorityListResource($authorModel);
         }
 
         $assessment = $productAssessmentRepository->averageAmountByProduct($this->getId());

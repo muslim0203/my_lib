@@ -12,6 +12,11 @@ trait HasCompositePrimaryKey
      */
     protected function setKeysForSaveQuery($query): Builder
     {
+        // Eloquent `getKeyName()` ni `string` deb e'lon qiladi, lekin bu
+        // traitdan foydalanadigan modellarda `$primaryKey` massiv bo'ladi.
+        // Annotatsiya haqiqiy qiymat turini bildiradi, aks holda quyidagi
+        // shart "har doim yolg'on" deb hisoblanardi.
+        /** @var array<int, string>|string $keys */
         $keys = $this->getKeyName();
 
         if (!is_array($keys)) {
@@ -44,7 +49,9 @@ trait HasCompositePrimaryKey
 
 
     /**
-     * @param $key
+     * Kompozit kalitda `$key` massiv bo'lishi mumkin.
+     *
+     * @param array<int, string>|string $key
      * @return mixed
      */
     public function getAttribute($key): mixed

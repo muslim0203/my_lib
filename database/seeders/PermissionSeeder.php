@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\WritesConsoleOutput;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -24,6 +25,8 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class PermissionSeeder extends Seeder
 {
+    use WritesConsoleOutput;
+
     public const ROLE_ADMIN = 'admin';
     public const ROLE_MODERATOR = 'moderator';
     public const GUARD = 'web';
@@ -161,7 +164,7 @@ class PermissionSeeder extends Seeder
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->command?->info(
+        $this->writeInfo(
             "Huquqlar va rollar (admin, moderator) tayyor. Mavjud bazadagi "
             . "adminlarni bloklanib qolmasligi uchun bir marta ishga tushiring: "
             . "php artisan db:seed --class=Database\\Seeders\\RoleSeeder"

@@ -167,4 +167,8 @@ bazasiga tegmaydi.
 - Bog'liqliklar auditi (`composer audit`, `npm audit`) bu muhitda
   bajarilmadi — tarmoq yo'q.
 
-Bandlar bo'yicha to'liq holat: `docs/remediation-status.md`.
+Hujjatlar:
+
+- `docs/final-report.md` - yakuniy hisobot, deploy holati va ochiq bandlar
+- `docs/remediation-status.md` - har bir audit bandi bo'yicha dalil va holat
+- `docker/ROLLBACK.md` - tarmoq, volume va ortga qaytish tartibi

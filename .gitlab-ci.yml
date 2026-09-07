@@ -1,0 +1,127 @@
+stages:
+  - code_analyze
+  - deploy_dev
+  - deploy_prod
+  - composer_install
+  - run_migration
+  - run_seeder
+  - clear_cache
+
+main-merge-request-check:
+  stage: code_analyze
+  script:
+    - if [[ $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == 'pre-master' ]]; then exit 0; else exit 1; fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'main'
+  tags:
+    - marketplace
+
+larastan-check:
+  stage: code_analyze
+  script:
+    - docker compose -f docker-compose-ci-cd.yml run --rm --build php_deploy ./vendor/bin/phpstan analyse --memory-limit=1G
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'pre-master'
+  tags:
+    - marketplace
+
+deploy-to-dev:
+  stage: deploy_dev
+  script:
+    - rsync -aqv --no-perms --no-owner --no-group --filter=':- .gitignore' --delete-after $CI_PROJECT_DIR/ /var/www/marketplace/backend
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+  tags:
+    - marketplace
+
+composer-install:
+  stage: composer_install
+  script:
+    - docker exec marketplace_php_cli composer install
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+  tags:
+    - marketplace
+  when: manual
+
+run-migration:
+  stage: run_migration
+  script:
+    - docker exec marketplace_php_cli php artisan migrate --force
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+  tags:
+    - marketplace
+  when: manual
+
+run-seeder:
+  stage: run_seeder
+  script:
+    - docker exec marketplace_php_cli php artisan db:seed
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+  tags:
+    - marketplace
+  when: manual
+
+app=clear-cache:
+  stage: clear_cache
+  script:
+    - docker exec marketplace_php_cli php artisan optimize:clear
+    - docker exec marketplace_php_cli php artisan cache:clear
+  tags:
+    - marketplace
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'pre-master'
+  when: manual
+
+deploy-to-prod:
+  stage: deploy_prod
+  script:
+    - rsync -aqv --no-perms --no-owner --no-group --filter=':- .gitignore' --delete-after $CI_PROJECT_DIR/ /var/www/marketplace/backend
+  tags:
+    - marketplace_prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  when: manual
+
+composer-install-prod:
+  stage: composer_install
+  script:
+    - docker exec marketplace_php_cli composer install
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  tags:
+    - marketplace_prod
+  when: manual
+
+run-migration-prod:
+  stage: run_migration
+  script:
+    - docker exec marketplace_php_cli php artisan migrate --force
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  tags:
+    - marketplace_prod
+  when: manual
+
+run-seeder-prod:
+  stage: run_seeder
+  script:
+    - docker exec marketplace_php_cli php artisan db:seed
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  tags:
+    - marketplace_prod
+  when: manual
+
+app=clear-cache-prod:
+  stage: clear_cache
+  script:
+    - docker exec marketplace_php_cli php artisan optimize:clear
+    - docker exec marketplace_php_cli php artisan cache:clear
+  tags:
+    - marketplace_prod
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+  when: manual

@@ -1,0 +1,224 @@
+@php use App\Core\Helpers\Lang\LanguageHelper;
+     use App\Models\Questions\Question;
+ @endphp
+@php
+    /**
+    * @var Question|null $model
+    */
+    $name = LanguageHelper::getName();
+@endphp
+
+@extends('layouts.index')
+
+@push('script')
+    <script src="{{ asset('assets/plugins/custom/datatables/datatables.bundle.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/apps/user-management/users/list/table.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/apps/user-management/users/list/export-users.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/apps/user-management/users/list/add.js') }}"></script>
+    <script src="{{ asset('assets/js/widgets.bundle.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/widgets.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/apps/chat/chat.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/utilities/modals/upgrade-plan.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/utilities/modals/create-app.js') }}"></script>
+    <script src="{{ asset('assets/js/custom/utilities/modals/users-search.js') }}"></script>
+    <script>
+        validationError('kt_docs_repeater_form', 'kt_docs_repeater_button');
+    </script>
+@endpush
+
+@section('content')
+
+    <!--begin::Toolbar-->
+    <div id="kt_app_toolbar" class="app-toolbar py-3 py-lg-6">
+        <!--begin::Toolbar container-->
+        <div id="kt_app_toolbar_container" class="app-container container-xxl d-flex flex-stack">
+            <!--begin::Page title-->
+            <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
+                <!--begin::Title-->
+                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                    @lang('client.Question')
+                </h1>
+                <!--end::Title-->
+                <!--begin::Breadcrumb-->
+                <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-muted">
+                        <a href="{{ url('dashboard') }}"
+                           class="text-muted text-hover-primary">@lang('breadcrumb.Home')</a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                        <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-muted">
+                        <a href="{{ route('question.filter') }}" class="text-muted text-hover-primary">
+                            @lang('breadcrumb.Question')
+                        </a>
+                    </li>
+                    <!--end::Item-->
+
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                        <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                    </li>
+                    <!--end::Item-->
+
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-muted">
+                        @if(!empty($model->getId()))
+                            <strong class="text-primary">@lang('breadcrumb.Question Update')</strong>
+                        @else
+                            <strong class="text-primary">@lang('breadcrumb.Question Create')</strong>
+                        @endif
+                    </li>
+                    <!--end::Item-->
+                </ul>
+                <!--end::Breadcrumb-->
+            </div>
+        </div>
+        <!--end::Toolbar container-->
+    </div>
+    <!--end::Toolbar-->
+
+    <div id="kt_app_content" class="app-content flex-column-fluid" data-select2-id="select2-data-kt_app_content">
+        <!--begin::Content container-->
+        <div id="kt_app_content_container" class="app-container container-xxl">
+            <!--begin::Card-->
+            <div class="card" style="min-height: 700px!important;">
+                <!--begin::Card body-->
+                <div class="card-body py-4 table-responsive">
+                    <!--begin::Form-->
+                    <form id="kt_docs_repeater_form"
+                          action="{{ !empty($model->getId()) ? route('question.edit', ['id' => $model->getId()]) : route('question.store') }}"
+                          method="post">
+                        @if(!empty($model->getId()))
+                            @method('PUT')
+                        @endif
+                        @csrf
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-10">
+                                        <label class="required form-label" for="question_title_oz">
+                                            @lang('model.title_oz')
+                                        </label>
+                                        <input
+                                            id="question_title_oz"
+                                            type="text"
+                                            name="title_oz"
+                                            class="form-control"
+                                            aria-label="Sizing example input"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value="{{ !empty($model->getId()) ? $model->getTitleOz() : old('title_oz') }}"
+                                            placeholder="@lang('model.Enter title_oz')"
+                                        />
+                                        @if($errors->has('title_oz'))
+                                            <span class="text-danger">{{ $errors->first('title_oz') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-10">
+                                        <label class="required form-label" for="question_title_uz">
+                                            @lang('model.title_uz')
+                                        </label>
+                                        <input
+                                            id="question_title_oz"
+                                            type="text"
+                                            name="title_uz"
+                                            class="form-control"
+                                            aria-label="Sizing example input"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value="{{ !empty($model->getId()) ? $model->getTitleUz() : old('title_uz')  }}"
+                                            placeholder="@lang('model.Enter title_uz')"
+                                        />
+                                        @if($errors->has('title_uz'))
+                                            <span class="text-danger">{{ $errors->first('title_uz') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-10">
+                                        <label class="required form-label" for="question_title_ru">
+                                            @lang('model.title_ru')
+                                        </label>
+                                        <input
+                                            id="question_title_ru"
+                                            type="text"
+                                            name="title_ru"
+                                            class="form-control"
+                                            aria-label="Sizing example input"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value="{{ !empty($model->getId()) ? $model->getTitleRu() : old('title_ru') }}"
+                                            placeholder="@lang('model.Enter title_ru')"
+                                        />
+                                        @if($errors->has('title_ru'))
+                                            <span class="text-danger">{{ $errors->first('title_ru') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mb-10">
+                                        <label class="required form-label" for="question_sort">
+                                            @lang('model.sort')
+                                        </label>
+                                        <input
+                                            id="question_sort"
+                                            type="number"
+                                            name="sort"
+                                            class="form-control"
+                                            aria-label="Sizing example input"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value="{{ !empty($model->getId()) ? $model->getSort() : old('sort') }}"
+                                            placeholder="@lang('model.Enter sort')"
+                                        />
+                                        @if($errors->has('sort'))
+                                            <span class="text-danger">{{ $errors->first('sort') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        <div class="mb-10">
+                            <label for="enum_categories_enabled" class="required form-label">
+                                @lang('model.enabled')
+                            </label>
+                            <select class="form-select" name="enabled" id="question_enabled"
+                                    aria-label="Select example">
+                                <option selected>@lang('model.Open this select')</option>
+                                <option
+                                    value="1" {{ !empty($model->getId())
+                                        ? ($model->isEnabled() ? 'selected' : '')
+                                        : (old('enabled') === '1' ? 'selected' : '') }}>@lang('model.Active')</option>
+                                <option
+                                    value="0" {{ !empty($model->getId())
+                                        ? (!$model->isEnabled() ? 'selected' : '')
+                                        : (old('enabled') === '0' ? 'selected' : '') }}>@lang('model.No Active')</option>
+                            </select>
+                            @if($errors->has('enabled'))
+                                <span class="text-danger">{{ $errors->first('enabled') }}</span>
+                            @endif
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit"
+                                    class="btn btn-primary"
+                                    id="kt_docs_repeater_button">
+                                @if(!empty($model))
+                                    @lang('button.Update')
+                                @else
+                                    @lang('button.Create')
+                                @endif
+                            </button>
+                        </div>
+                    </form>
+                    <!--end::Form-->
+                </div>
+                <!--end::Card body-->
+            </div>
+            <!--end::Card-->
+        </div>
+        <!--end::Content container-->
+    </div>
+
+@stop

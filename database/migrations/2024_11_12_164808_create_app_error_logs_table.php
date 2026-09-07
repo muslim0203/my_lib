@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('app_error_logs', function (Blueprint $table) {
+            $table->id();
+            $table->text('message')->nullable();
+            $table->text('context')->nullable();
+            $table->text('extra')->nullable();
+            $table->string('level')->nullable();
+            $table->string('level_name')->nullable();
+            $table->string('channel')->nullable();
+            $table->string('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+            $table->integer('user_id')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('app_error_logs');
+    }
+};

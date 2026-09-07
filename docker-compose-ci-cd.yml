@@ -1,0 +1,8 @@
+version: "3.8"
+
+services:
+  php_deploy:
+    build:
+      context: .
+      dockerfile: docker/php/deploy/Dockerfile
+    working_dir: /test

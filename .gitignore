@@ -17,6 +17,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.claude
 storage/framework/cache
 storage/app/
 bootstrap/cache

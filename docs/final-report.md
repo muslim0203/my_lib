@@ -28,24 +28,28 @@ release darvozasi ochiq qolmoqda:
 | | |
 |---|---|
 | Branch | `master` |
-| Baseline | `561ef7c` (ish boshlanishidan oldin yaratilgan snapshot) |
-| Yakuniy kod commiti | `e9c9ede` (undan keyingi commitlar faqat hujjat) |
-| Hajmi | `561ef7c..e9c9ede`: 136 fayl, +9982 / −776 |
+| Baseline | `c3c9958` (ish boshlanishidan oldin yaratilgan snapshot) |
+| Yakuniy kod commiti | `1116fbd` (undan keyingi commitlar faqat hujjat) |
+| Hajmi | `c3c9958..1116fbd`: 136 fayl, +9982 / −776 |
 
 Repozitoriy ish boshida git ostida **emas** edi. Har bir o'zgarishni
 ortga qaytarish mumkin bo'lishi uchun avval baseline commit yaratildi.
 
+> Commit raqamlari bir marta o'zgargan: author pochtasi
+> `muslim0203@gmail.com` ga to'g'rilanib, tarix qayta yozilgan.
+> Fayl mazmuni o'zgarmagan (tree hash `3516a2db` - aynan o'sha).
+
 Commitlar:
 
 ```
-e9c9ede test: cover report filter branch selection and SQL bindings
-fd104fc chore: raise PHPStan to level 5 and fix the defects it surfaced
-829e6ba fix(admin): RBAC, CSRF on destructive routes, locale allow-list,
+1116fbd test: cover report filter branch selection and SQL bindings
+12ce434 chore: raise PHPStan to level 5 and fix the defects it surfaced
+4c94ee2 fix(admin): RBAC, CSRF on destructive routes, locale allow-list,
         employee IDOR, duplicate route names
-0b41bab fix(pay): fail closed on unconfigured Click/Payme credentials,
+2719894 fix(pay): fail closed on unconfigured Click/Payme credentials,
         redact signatures
-7e2913a chore: infra hardening, docs, phpstan level 3
-b2918d0 wip: security remediation checkpoint (entitlement, OTP, files,
+e18bce3 chore: infra hardening, docs, phpstan level 3
+482da82 wip: security remediation checkpoint (entitlement, OTP, files,
         exceptions, CORS, SQL)
 ```
 
@@ -226,7 +230,7 @@ qayta yaratilganda yoki FPM graceful reload qilinganda ko'rinadi;
 `make prod-optimize` buni bajaradi.
 
 **Ortga qaytish cheklovlari.** Kod darajasida ortga qaytish oddiy
-(`561ef7c` gacha har bir commit alohida). Ma'lumotlar darajasida:
+(`c3c9958` gacha har bir commit alohida). Ma'lumotlar darajasida:
 migratsiyalarning `down()` metodlari qo'shilgan ustunlarni olib tashlaydi
 va `files.path` ni tiklaydi, lekin **eski OTP kodlari qaytarilmaydi**
 (ular ataylab bekor qilingan). Fayllar ko'chirilgan bo'lsa, ortga

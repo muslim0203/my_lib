@@ -44,4 +44,8 @@ return array(
     'Add Question Answer' => 'Savol javobini qo‘shish',
     'Search' => 'Qidirish',
     'Add Banner' => 'Banner qo‘shish',
+    'Add Proverb' => 'Maqol qo’shish',
+    'Create' => 'Yaratish',
+    'Update' => 'Yangilash',
+    'View' => 'Ko’rish',
 );

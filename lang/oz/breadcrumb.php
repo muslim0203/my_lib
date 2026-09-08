@@ -66,4 +66,8 @@ return array(
     'Company' => 'Kompaniya',
     'Company Update' => 'Kompaniyani yangilash',
     'Company Create' => 'Kompaniya yaratish',
+    'Proverb' => 'Maqollar',
+    'Proverb Create' => 'Maqol yaratish',
+    'Proverb Update' => 'Maqolni yangilash',
+    'Proverb View' => 'Maqolni ko’rish',
 );

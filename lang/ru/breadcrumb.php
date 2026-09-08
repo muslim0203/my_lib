@@ -66,4 +66,8 @@ return array(
     'Company' => 'Компания',
     'Company Update' => 'Обновить компанию',
     'Company Create' => 'Создать компанию',
+    'Proverb' => 'Пословицы',
+    'Proverb Create' => 'Создать пословицу',
+    'Proverb Update' => 'Обновить пословицу',
+    'Proverb View' => 'Просмотр пословицы',
 );

@@ -35,4 +35,5 @@ return array (
   'Product Order' => 'Product Order',
   'Top Buyers List' => 'Top Buyers List',
   'Top Products List' => 'Top Products List',
+    'Proverb Banner' => 'Proverb banner',
 );

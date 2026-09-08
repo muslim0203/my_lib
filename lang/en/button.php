@@ -44,4 +44,8 @@ return array (
   'Add Question Answer' => 'Add Question Answer',
   'Search' => 'Search',
   'Add Banner' => 'Add Banner',
+    'Add Proverb' => 'Add proverb',
+    'Create' => 'Create',
+    'Update' => 'Update',
+    'View' => 'View',
 );

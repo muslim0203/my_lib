@@ -66,4 +66,8 @@ return array (
   'Company' => 'Company',
   'Company Update' => 'Company Update',
   'Company Create' => 'Company Create',
+    'Proverb' => 'Proverbs',
+    'Proverb Create' => 'Create proverb',
+    'Proverb Update' => 'Update proverb',
+    'Proverb View' => 'View proverb',
 );

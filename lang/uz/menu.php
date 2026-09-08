@@ -34,4 +34,5 @@ return array(
     'Product Order' => 'Маҳсулот буюртмаси',
     'Top Buyers List' => 'Энг яхши харидорлар рўйхати',
     'Top Products List' => 'Энг яхши маҳсулотлар рўйхати',
+    'Proverb Banner' => 'Мақоллар баннери',
 );

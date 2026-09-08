@@ -44,4 +44,8 @@ return array(
     'Add Question Answer' => 'Савол жавобини қўшиш',
     'Search' => 'Қидириш',
     'Add Banner' => 'Баннер қўшиш',
+    'Add Proverb' => 'Мақол қўшиш',
+    'Create' => 'Яратиш',
+    'Update' => 'Янгилаш',
+    'View' => 'Кўриш',
 );

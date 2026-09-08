@@ -230,5 +230,16 @@ return array(
     'Home' => 'Home',
     'Main Banner' => 'Main Banner',
     'Company' => 'Company',
-    'Successfully logged out' => 'Successfully logged out'
+    'Successfully logged out' => 'Successfully logged out',
+    'Audio files is not available!' => 'Audio files are not available!',
+    'Is editable' => 'Is editable',
+    'Licence Code' => 'Licence code',
+    'Licence Date' => 'Licence date',
+    'Licence File Name' => 'Licence file name',
+    'Licence files is not available!' => 'Licence files are not available!',
+    'Proverb' => 'Proverb',
+    'Proverb save error' => 'Proverb save error',
+    'Request doesnt editable' => 'The request is not editable',
+    'Top Products' => 'Top products',
+    'Update saved' => 'Changes saved',
 );

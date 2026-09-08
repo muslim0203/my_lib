@@ -44,4 +44,8 @@ return array(
     'Add Question Answer' => 'Добавить ответ на вопрос',
     'Search' => 'Поиск',
     'Add Banner' => 'Добавить баннер',
+    'Add Proverb' => 'Добавить пословицу',
+    'Create' => 'Создать',
+    'Update' => 'Обновить',
+    'View' => 'Просмотр',
 );

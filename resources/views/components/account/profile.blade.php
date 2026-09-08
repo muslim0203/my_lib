@@ -97,7 +97,7 @@
                                                              alt=""/></span>
                                                     @elseif(app()->currentLocale() === 'ru')
                                                         <span
-                                                                class="fs-8 rounded bg-light px-3 py-2 position-absolute translate-middle-y top-50 end-0">@lang('lang.Russia')
+                                                                class="fs-8 rounded bg-light px-3 py-2 position-absolute translate-middle-y top-50 end-0">@lang('lang.Russian')
                                                         <img class="w-15px h-15px rounded-1 ms-2"
                                                              src="{{ asset('assets/media/flags/russia.svg') }}"
                                                              alt=""/>
@@ -147,7 +147,7 @@
                 <span class="symbol symbol-20px me-4">
 														<img class="rounded-1"
                                                              src="{{ asset('assets/media/flags/russia.svg') }}" alt=""/>
-													</span>@lang('lang.Russia')</a>
+													</span>@lang('lang.Russian')</a>
             </div>
             <!--end::Menu item-->
         </div>

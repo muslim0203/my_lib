@@ -34,4 +34,5 @@ return array(
     'Product Order' => 'Заказ продукта',
     'Top Buyers List' => 'Список лучших покупателей',
     'Top Products List' => 'Список лучших продуктов',
+    'Proverb Banner' => 'Баннер пословиц',
 );

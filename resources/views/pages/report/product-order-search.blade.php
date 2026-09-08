@@ -112,7 +112,7 @@
                                     <label class="form-label fs-6 fw-semibold">@lang('model.payment_type'):</label>
                                     <select class="form-select form-select-solid fw-bold"
                                             data-kt-select2="true"
-                                            data-placeholder="Select option" data-allow-clear="true"
+                                            data-placeholder="@lang('client.Select an option')" data-allow-clear="true"
                                             data-kt-user-table-filter="role" data-hide-search="true"
                                             name="payment_type">
                                         <option {{ request('payment_type') ?? 'selected' }}></option>
@@ -128,7 +128,7 @@
                                     <label class="form-label fs-6 fw-semibold">@lang('model.Categories'):</label>
                                     <select class="form-select form-select-solid fw-bold"
                                             data-kt-select2="true"
-                                            data-placeholder="Select option" data-allow-clear="true"
+                                            data-placeholder="@lang('client.Select an option')" data-allow-clear="true"
                                             name="category_id">
                                         <option selected value="">@lang('model.Open this select')</option>
                                         @foreach($categories as $category)
@@ -140,7 +140,7 @@
                                     <label class="form-label fs-6 fw-semibold">@lang('model.Genres'):</label>
                                     <select class="form-select form-select-solid fw-bold"
                                             data-kt-select2="true"
-                                            data-placeholder="Select option" data-allow-clear="true"
+                                            data-placeholder="@lang('client.Select an option')" data-allow-clear="true"
                                             name="genre_id">
                                         <option selected value="">@lang('model.Open this select')</option>
                                         @foreach($genres as $genre)
@@ -152,7 +152,7 @@
                                     <label class="form-label fs-6 fw-semibold">@lang('model.Tags'):</label>
                                     <select class="form-select form-select-solid fw-bold"
                                             data-kt-select2="true"
-                                            data-placeholder="Select option" data-allow-clear="true"
+                                            data-placeholder="@lang('client.Select an option')" data-allow-clear="true"
                                             name="tag_id">
                                         <option selected value="">@lang('model.Open this select')</option>
                                         @foreach($tags as $tag)

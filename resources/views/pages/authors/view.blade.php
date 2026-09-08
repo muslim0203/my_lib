@@ -268,7 +268,7 @@
                             <!--begin::Select2-->
                             <select disabled name="education_type_id" class="form-select mb-2" data-control="select2"
                                     data-hide-search="true"
-                                    data-placeholder="Select an option" id="author_education_type">
+                                    data-placeholder="@lang('client.Select an option')" id="author_education_type">
                                 @foreach($educationTypes->all() as $value)
                                     @if($value['id'] === $data->getEducationTypeId())
                                         <option value="{{ $value['id'] }}"

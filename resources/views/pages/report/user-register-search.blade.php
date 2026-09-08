@@ -143,7 +143,7 @@ $name = LanguageHelper::getName();
                                             :</label>
                                         <select class="form-select form-select-solid fw-bold"
                                                 data-kt-select2="true"
-                                                data-placeholder="Select option" data-allow-clear="true"
+                                                data-placeholder="@lang('client.Select an option')" data-allow-clear="true"
                                                 data-kt-user-table-filter="role" data-hide-search="true"
                                                 name="status">
                                             <option {{ request('status') ?? 'selected' }}></option>

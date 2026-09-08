@@ -242,4 +242,8 @@ return array(
     'Request doesnt editable' => 'Аризани таҳрирлаб бўлмайди',
     'Top Products' => 'Энг кўп сотилган маҳсулотлар',
     'Update saved' => 'Ўзгаришлар сақланди',
+    'Validation error' => 'Маълумотлар нотўғри тўлдирилган',
+    'Authorization Token not found' => 'Авторизация токени топилмади',
+    'Token is Expire' => 'Токен муддати тугаган',
+    'Token is Invalid' => 'Токен яроқсиз',
 );

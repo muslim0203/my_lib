@@ -242,4 +242,8 @@ return array(
     'Request doesnt editable' => 'The request is not editable',
     'Top Products' => 'Top products',
     'Update saved' => 'Changes saved',
+    'Validation error' => 'Validation error',
+    'Authorization Token not found' => 'Authorization token not found',
+    'Token is Expire' => 'Token has expired',
+    'Token is Invalid' => 'Token is invalid',
 );

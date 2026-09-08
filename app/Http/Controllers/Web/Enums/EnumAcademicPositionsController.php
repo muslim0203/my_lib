@@ -115,7 +115,7 @@ class EnumAcademicPositionsController extends Controller
         $model = $this->findModel($id);
 
         if ($model->delete() !== true) {
-            return Success::error('Unknown error')->setStatusCode(400);
+            return Success::error('Unknown error');
         }
 
         Session::flash('success', __('client.Successful removed'));

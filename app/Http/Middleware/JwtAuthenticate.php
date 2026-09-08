@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Exception;
+use App\Core\Helpers\Response\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -43,10 +44,8 @@ class JwtAuthenticate
      */
     protected static function response(string $message): JsonResponse
     {
-        return response()->json([
-            'status' => false,
-            'code' => 401,
-            'message' => __('client.' . $message)
-        ])->setStatusCode(401);
+        // Umumiy API konverti (App\Core\Helpers\Response\ApiResponse):
+        // mijoz barcha javoblarni bitta modelga parse qila oladi.
+        return ApiResponse::make(false, __('client.' . $message), null, 401);
     }
 }

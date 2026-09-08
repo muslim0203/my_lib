@@ -46,7 +46,7 @@ class ProductController extends Controller
         $this->productRepository->save($model);
 
         if (!$model->is_deleted) {
-            return Success::error('Unknown error')->setStatusCode(400);
+            return Success::error('Unknown error');
         }
 
         Session::flash('success', __('client.Successful removed'));

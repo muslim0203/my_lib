@@ -242,4 +242,8 @@ return array(
     'Request doesnt editable' => 'Заявку нельзя редактировать',
     'Top Products' => 'Топ товаров',
     'Update saved' => 'Изменения сохранены',
+    'Validation error' => 'Ошибка валидации',
+    'Authorization Token not found' => 'Токен авторизации не найден',
+    'Token is Expire' => 'Срок действия токена истёк',
+    'Token is Invalid' => 'Неверный токен',
 );

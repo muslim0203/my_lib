@@ -28,7 +28,7 @@ class ExceptionHandlerTest extends TestCase
         Route::post('api/__test/validation', function () {
             throw ValidationException::withMessages([
                 'email' => ['The email field is required.'],
-                'code'  => ['The code field must be 4 digits.'],
+                'code'  => ['The code field must be 6 digits.'],
             ]);
         });
 
@@ -54,9 +54,9 @@ class ExceptionHandlerTest extends TestCase
         $response = $this->postJson('/api/__test/validation');
 
         $response->assertStatus(422);
-        $response->assertJsonPath('status', false);
-        $response->assertJsonPath('data.errors.email.0', 'The email field is required.');
-        $response->assertJsonPath('data.errors.code.0', 'The code field must be 4 digits.');
+        $response->assertJsonPath('success', false);
+        $response->assertJsonPath('errors.email.0', 'The email field is required.');
+        $response->assertJsonPath('errors.code.0', 'The code field must be 6 digits.');
     }
 
     /**
@@ -66,8 +66,8 @@ class ExceptionHandlerTest extends TestCase
     {
         $response = $this->getJson('/api/__test/boom');
 
-        $response->assertJsonStructure(['status', 'message', 'code', 'data']);
-        $response->assertJsonPath('status', false);
+        $response->assertJsonStructure(['success', 'message', 'code', 'data', 'errors']);
+        $response->assertJsonPath('success', false);
     }
 
     /**
@@ -143,7 +143,7 @@ class ExceptionHandlerTest extends TestCase
 
         $response->assertStatus(404);
         $response->assertHeader('content-type', 'application/json');
-        $response->assertJsonStructure(['status', 'message', 'code', 'data']);
+        $response->assertJsonStructure(['success', 'message', 'code', 'data', 'errors']);
     }
 
     /**
@@ -162,7 +162,7 @@ class ExceptionHandlerTest extends TestCase
         );
 
         $response->assertStatus(422);
-        $response->assertJsonPath('data.errors.email.0', 'The email field is required.');
+        $response->assertJsonPath('errors.email.0', 'The email field is required.');
     }
 
     /**
@@ -195,6 +195,6 @@ class ExceptionHandlerTest extends TestCase
         $response = $this->postJson('/api/__test/manual-validation');
 
         $response->assertStatus(422);
-        $response->assertJsonStructure(['data' => ['errors' => ['email']]]);
+        $response->assertJsonStructure(['errors' => ['email']]);
     }
 }

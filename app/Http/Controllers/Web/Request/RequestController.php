@@ -55,7 +55,7 @@ class RequestController extends Controller
     public function confirm(ConfirmOrCancelRequest $confirmOrCancelRequest, int $id, RequestService $requestService):JsonResponse
     {
         if (!$requestService->confirmRequest($confirmOrCancelRequest,$id)) {
-            Success::error(__('client.Unknown error'));
+            Success::error('Unknown error');
         }
 
         return Success::send('Successful done');
@@ -70,7 +70,7 @@ class RequestController extends Controller
     public function reject(ConfirmOrCancelRequest $confirmOrCancelRequest, int $id, RequestService $requestService): JsonResponse
     {
         if (!$requestService->rejectRequest($confirmOrCancelRequest,$id)) {
-            Success::error(__('client.Unknown error'));
+            Success::error('Unknown error');
         }
 
         return Success::send('Successful done');

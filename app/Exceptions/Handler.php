@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Core\Helpers\Response\ApiResponse;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
@@ -84,14 +85,13 @@ class Handler extends ExceptionHandler
      */
     private function renderValidationException(ValidationException $e): JsonResponse
     {
-        return response()->json([
-            'status'  => false,
-            'message' => $e->getMessage(),
-            'code'    => ResponseAlias::HTTP_UNPROCESSABLE_ENTITY,
-            'data'    => [
-                'errors' => $e->errors(),
-            ],
-        ], ResponseAlias::HTTP_UNPROCESSABLE_ENTITY);
+        return ApiResponse::make(
+            false,
+            $e->getMessage(),
+            null,
+            ResponseAlias::HTTP_UNPROCESSABLE_ENTITY,
+            $e->errors()
+        );
     }
 
     /**
@@ -139,12 +139,7 @@ class Handler extends ExceptionHandler
             }
         }
 
-        return response()->json([
-            'status'  => false,
-            'message' => $message,
-            'code'    => $code,
-            'data'    => [],
-        ], $statusCode);
+        return ApiResponse::make(false, $message, null, $statusCode);
     }
 
     /**

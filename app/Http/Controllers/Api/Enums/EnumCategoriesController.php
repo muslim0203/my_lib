@@ -24,10 +24,8 @@ class EnumCategoriesController extends Controller
      */
     public function list(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'message' => __('client.Success'),
-            'categories'    => $this->enumCategoriesRepository->findList()
-        ]);
+        // Ilgari ro'yxat `categories` kalitida, umumiy konvertdan tashqarida
+        // qaytarilardi. Endi u boshqa endpointlar kabi `data` ichida.
+        return Success::send('Success', $this->enumCategoriesRepository->findList());
     }
 }

@@ -4,41 +4,29 @@ namespace App\Core\Helpers\Response;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Lang;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class Validation
 {
-    private static array $messages = [];
-
     /**
+     * Validatsiya xatosi.
+     *
+     * Ilgari xatolar `data` ichida `[{field, message}]` massivi sifatida
+     * qaytarilardi va statik xususiyatda to'planardi. Endi ular umumiy
+     * konvertdagi `errors` maydonida, Laravel beradigan tabiiy shaklda:
+     * `{"maydon": ["xabar", ...]}`.
+     *
      * @param Validator $validator
      * @return JsonResponse
      */
     public static function send(Validator $validator): JsonResponse
     {
-        self::recursiveFunc($validator->getMessageBag()->getMessages());
-
-        return response()->json([
-            'success' => false,
-            'message' => Lang::get('validate error'),
-            'data'    => self::$messages
-        ], 422);
-    }
-
-    /**
-     * @param array $errors
-     * @param string|null $key
-     * @return void
-     */
-    public static function recursiveFunc(array $errors, ?string $key = null): void
-    {
-        foreach ($errors as $k => $error) {
-            foreach ($error as $item) {
-                self::$messages[] = [
-                    'field'   => $k,
-                    'message' => $item
-                ];
-            }
-        }
+        return ApiResponse::make(
+            false,
+            __('client.Validation error'),
+            null,
+            ResponseAlias::HTTP_UNPROCESSABLE_ENTITY,
+            $validator->errors()->messages()
+        );
     }
 }

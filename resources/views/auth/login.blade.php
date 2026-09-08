@@ -193,7 +193,10 @@
     @endphp
     <script>
         $(function () {
-            // Encoded server side as JSON: quotes, backticks and </script> are escaped.
+            // Server tomonda JSON sifatida kodlanadi: qo'shtirnoq, backtick va
+            // yopuvchi skript tegi escape qilinadi. DIQQAT: bu yerga yopuvchi
+            // tegni literal yozmang - HTML skriptni birinchi uchraganida tugatadi
+            // (izoh ichida ham), qolgan kod esa sahifaga matn bo'lib chiqadi.
             var errors = @json((object) $sessionErrorMessages);
 
             if (errors.hasOwnProperty('username')) {

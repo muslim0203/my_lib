@@ -51,6 +51,14 @@ class ProductController extends Controller
 
         Session::flash('success', __('client.Successful removed'));
 
+        // Delete.js o'chirishni AJAX DELETE bilan yuboradi. Redirect
+        // qaytarilsa, XHR 302 ni AYNI DELETE metodi bilan kuzatadi va
+        // filter marshrutida 405 oladi - yozuv o'chirilgan bo'lsa ham
+        // foydalanuvchiga xato ko'rinadi. Shuning uchun AJAX uchun JSON.
+        if (request()->expectsJson()) {
+            return Success::send('Successful removed');
+        }
+
         return redirect()->route('product.filter');
     }
 

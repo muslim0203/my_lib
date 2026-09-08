@@ -89,6 +89,14 @@ class ProverbController extends Controller
 
         // Boshqa admin kontrollerlari kabi filter sahifasiga qaytariladi.
         // Ilgari metod umuman hech narsa qaytarmasdi (bo'sh 200).
+        // Delete.js o'chirishni AJAX DELETE bilan yuboradi. Redirect
+        // qaytarilsa, XHR 302 ni AYNI DELETE metodi bilan kuzatadi va
+        // filter marshrutida 405 oladi - yozuv o'chirilgan bo'lsa ham
+        // foydalanuvchiga xato ko'rinadi. Shuning uchun AJAX uchun JSON.
+        if (request()->expectsJson()) {
+            return Success::send('Successful removed');
+        }
+
         return redirect()->route('proverb.filter');
     }
 

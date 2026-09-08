@@ -25,10 +25,10 @@
     <script>
         remove(
             'product_delete',
-            '@lang("client.Are you sure?")',
-            '@lang("client.You won\'t be able to revert this!")',
-            '@lang('button.Yes, delete it')',
-            '@lang('button.Cancel')'
+            @json(__("client.Are you sure?")),
+            @json(__('client.You won\'t be able to revert this!')),
+            @json(__('button.Yes, delete it')),
+            @json(__('button.Cancel'))
         );
     </script>
 @endpush
@@ -276,7 +276,7 @@
                                                 href="#"
                                                 class="menu-link px-3 product_delete"
                                                 data-action="{{ route('product.delete', ['id' => $item->getId()]) }}" data-value="{{ csrf_token() }}">
-                                                @lang('button.Delete')
+                                                @lang('button.delete')
                                             </a>
                                         </div>
                                         @php endif; @endphp

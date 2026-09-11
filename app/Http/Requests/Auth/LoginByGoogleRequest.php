@@ -25,7 +25,9 @@ class LoginByGoogleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'code' => ['required', 'string', 'max:4096'],
+            'state' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/'],
+            'code_verifier' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/'],
         ];
     }
 }

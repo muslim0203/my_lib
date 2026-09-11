@@ -67,10 +67,12 @@ Route::controller(AuthController::class)
             ->middleware('throttle:otp-send')
             ->name('auth.send-token-to-mail');
 
-        Route::get('auth/login-by-google', 'loginByGoogle')
+        Route::post('auth/login-by-google', 'loginByGoogle')
+            ->middleware('throttle:20,1')
             ->name('auth.login-by-google');
 
         Route::get('auth/redirect-to-auth-by-google', 'redirectToAuthByGoogle')
+            ->middleware('throttle:20,1')
             ->name('auth.redirect-auth-by-google');
 
         Route::post('auth/login-by-sms', 'loginBySms')

@@ -8,6 +8,9 @@ use App\Core\Services\Auth\AuthenticationService;
 use App\Core\Services\Auth\Interfaces\RegisterInterface;
 use App\Http\Requests\Auth\EmailSendCodeRequest;
 use App\Http\Requests\Auth\LoginByEmailRequest;
+use App\Http\Requests\Auth\LoginByGoogleRequest;
+use App\Core\Services\Auth\GoogleOAuthState;
+use Illuminate\Http\Request;
 use App\Http\Requests\Auth\LoginBySmsRequest;
 use App\Http\Requests\Auth\RegisterByEmailRequest;
 use App\Http\Requests\Auth\VerifyMailTokenRequest;
@@ -52,19 +55,27 @@ class AuthController extends Controller
      * @param FormRequest $formRequest
      * @return JsonResponse
      */
-    public function loginByGoogle(FormRequest $formRequest): JsonResponse
+    public function loginByGoogle(LoginByGoogleRequest $formRequest): JsonResponse
     {
         return Success::send('Successful done login by google', [
             'type' => 'Bearer',
             'access_token' => $this->authenticationService->login($formRequest, LoginTypeEnum::_LOGIN_GOOGLE->value)
-        ]);
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**
      * @return JsonResponse
      */
-    public function redirectToAuthByGoogle(): JsonResponse
+    public function redirectToAuthByGoogle(Request $request, GoogleOAuthState $oauthState): JsonResponse
     {
+        foreach (['client_id', 'client_secret', 'redirect'] as $key) {
+            abort_unless(config('services.google.' . $key), 503, 'Google sign-in is not configured.');
+        }
+        $input = $request->validate([
+            'state' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/'],
+            'code_challenge' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{43}$/'],
+        ]);
+        $oauthState->issue($input['state'], $input['code_challenge']);
         /**
          * @var GoogleProvider $googleDriver
          */
@@ -75,10 +86,16 @@ class AuthController extends Controller
             [
                 'url' => $googleDriver
                     ->stateless()
+                    ->with([
+                        'state' => $input['state'],
+                        'code_challenge' => $input['code_challenge'],
+                        'code_challenge_method' => 'S256',
+                        'prompt' => 'select_account',
+                    ])
                     ->redirect()
                     ->getTargetUrl()
             ]
-        );
+        )->header('Cache-Control', 'no-store');
     }
 
     /*public function register(

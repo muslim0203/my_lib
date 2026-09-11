@@ -13,7 +13,7 @@ use App\Core\Services\Auth\Interfaces\AuthInterface;
 use App\Models\Users\SocialiteLogin;
 use App\Models\Users\SocialUser;
 use App\Models\Users\User;
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -38,18 +38,28 @@ class GoogleAuthService implements AuthInterface
      */
     public function login(FormRequest $formRequest): string
     {
+        app(GoogleOAuthState::class)->consume(
+            (string) $formRequest->input('state'),
+            (string) $formRequest->input('code_verifier')
+        );
         try {
             /**
              * @var GoogleProvider $googleProvider
              */
             $googleProvider = Socialite::driver('google');
 
-            $googleUser = $googleProvider->stateless()->user();
+            $googleUser = $googleProvider->stateless()
+                ->with(['code_verifier' => $formRequest->input('code_verifier')])
+                ->user();
 
-        } catch (ClientException $e) {
-            Log::error($e->getMessage(), ['Invalidate credentials provided by google']);
+        } catch (GuzzleException $e) {
+            // Never log Google responses, authorization codes, or tokens.
+            Log::warning('Google OAuth exchange failed.', ['exception' => get_class($e)]);
             abort(401, __('client.Invalid credentials provided.'));
         }
+
+        abort_unless($googleUser->getId() && $googleUser->getEmail()
+            && ($googleUser->user['email_verified'] ?? false) === true, 401, 'Google email is not verified.');
 
         $user = $this->userRepository->findByEmail($googleUser->getEmail());
 
@@ -66,6 +76,10 @@ class GoogleAuthService implements AuthInterface
             $socialiteLogin = $this->socialiteLoginRepository->findByUserIdAndProviderId($user->getId(), $googleUser->getId());
 
             if (empty($socialiteLogin)) {
+                // Only auto-link addresses for which Google is authoritative.
+                $email = strtolower($googleUser->getEmail());
+                abort_unless(str_ends_with($email, '@gmail.com') || !empty($googleUser->user['hd']),
+                    401, 'Use email sign-in to access your existing account.');
                 $socialiteLogin = new SocialiteLogin();
                 $socialiteLogin->setUserId($user->getId());
                 $socialiteLogin->setProvider(ProvidersEnum::_GOOGLE->value);
@@ -83,10 +97,10 @@ class GoogleAuthService implements AuthInterface
             }
 
             $socialUser = new SocialUser();
-            $socialUser->setFirstName($googleUser->user['given_name']);
-            $socialUser->setLastName($googleUser->user['family_name']);
-            $socialUser->setMiddleName($googleUser->user['given_name'] . ' ' . $googleUser->user['family_name']);
-            $socialUser->setExternalPicture($googleUser->user['picture']);
+            $socialUser->setFirstName($googleUser->user['given_name'] ?? $googleUser->getName() ?? '');
+            $socialUser->setLastName($googleUser->user['family_name'] ?? '');
+            $socialUser->setMiddleName($googleUser->getName() ?? '');
+            $socialUser->setExternalPicture($googleUser->getAvatar() ?? '');
 
             $this->transaction->wrap(function () use ($user, $socialUser, $googleUser) {
                 $this->socialUserRepository->save($socialUser);

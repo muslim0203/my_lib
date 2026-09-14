@@ -77,12 +77,18 @@ class ClickService implements ClickContract
 
         $clickPaymentRepository->save($clickPayment);
 
-        return config('click.base_url') . http_build_query([
-                'service_id' => config('click.service_id'),
-                'merchant_id' => config('click.merchant_id'),
-                'amount' => $clickPayment->getAmount(),
-                'transaction_param' => $clickPayment->getId()
-            ]);
+        $query = [
+            'service_id' => config('click.service_id'),
+            'merchant_id' => config('click.merchant_id'),
+            'amount' => $clickPayment->getAmount(),
+            'transaction_param' => $clickPayment->getId()
+        ];
+
+        if (!empty(config('click.return_url'))) {
+            $query['return_url'] = config('click.return_url');
+        }
+
+        return config('click.base_url') . http_build_query($query);
     }
 
 
@@ -206,7 +212,16 @@ class ClickService implements ClickContract
         $clickPayment->setError(intval($params['error']));
         $clickPayment->setSignTime($params['sign_time']);
         $clickPayment->setSignString($params['sign_string']);
+        $clickPayment->setMerchantConfirmId($clickPayment->getId());
         $clickPaymentRepository->save($clickPayment);
+
+        // Click to'lovni muvaffaqiyatli yakunlagan bo'lsa (error = 0) fiskal
+        // chek yuboriladi. Bu qadam callback natijasiga ta'sir qilmaydi.
+        // Takroriy complete callback yuqoridagi actionNotFound tekshiruvida
+        // to'xtaydi, shuning uchun chek ikki marta ketmaydi.
+        if (intval($params['error']) === 0 && config('click.fiscal.enabled')) {
+            app(ClickFiscalService::class)->sendReceipt($clickPayment);
+        }
 
         return new ClickResult(
             error: ClickErrorCodeEnum::CODE_SUCCESS->value,

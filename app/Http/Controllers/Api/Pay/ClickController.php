@@ -10,7 +10,7 @@ use App\Http\Requests\Payment\ClickTransferPaymentCompleteFormRequest;
 use App\Http\Requests\Payment\ClickTransferPaymentPrepareFormRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Core\Services\Pay\Helpers\QrCodeImage;
 
 class ClickController extends Controller
 {
@@ -51,10 +51,11 @@ class ClickController extends Controller
      */
     public function generateQrCode(ClickRedirectUrlFormRequest $clickRedirectUrlFormRequest): JsonResponse
     {
-        $base64QRCode = base64_encode(QrCode::format('png')->size(300)->generate($this->clickContract->getRedirectUrl($clickRedirectUrlFormRequest)));
+        $redirectUrl = $this->clickContract->getRedirectUrl($clickRedirectUrlFormRequest);
 
         return Success::send('Qr code generate', [
-            'data' => 'data:image/png;base64,' . $base64QRCode,
+            'data' => QrCodeImage::dataUri($redirectUrl),
+            'redirect_url' => $redirectUrl,
         ]);
     }
 }

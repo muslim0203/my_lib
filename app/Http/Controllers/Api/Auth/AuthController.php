@@ -52,7 +52,7 @@ class AuthController extends Controller
     }
 
     /**
-     * @param FormRequest $formRequest
+     * @param LoginByGoogleRequest $formRequest
      * @return JsonResponse
      */
     public function loginByGoogle(LoginByGoogleRequest $formRequest): JsonResponse

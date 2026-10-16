@@ -11,7 +11,7 @@ class OfertaTest extends TestCase
         return [
             'lotin' => ['oz', 'VOSITACHILIK SHARTNOMASI (OFERTA)', 'AJ AND J GROUP'],
             'kirill' => ['uz', 'ВОСИТАЧИЛИК ШАРТНОМАСИ (ОФЕРТА)', 'Якуний қоидалар'],
-            'rus' => ['ru', 'МЕДИАЦИОННЫЙ ДОГОВОР (ОФЕРТА)', 'Заключительные положения'],
+            'rus' => ['ru', 'ПОСРЕДНИЧЕСКИЙ ДОГОВОР (ОФЕРТА)', 'Заключительные положения'],
         ];
     }
 
@@ -47,7 +47,7 @@ class OfertaTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.lang', $locale)
             ->assertJsonPath('data.title', $title)
-            ->assertJsonPath('data.version', '2024-09-28')
+            ->assertJsonPath('data.version', '2026-10-16')
             ->assertJsonPath('data.url', url('/oferta/' . $locale));
 
         $this->assertStringContainsString($text, $this->getJson('/api/oferta', ['Accept-Language' => $locale])->json('data.content'));

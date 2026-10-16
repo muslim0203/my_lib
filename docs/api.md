@@ -444,7 +444,7 @@ to‘liq qoidalar `app/Http/Requests/` da.
 {
   "data": {
     "lang": "oz",
-    "version": "2024-09-28",
+    "version": "2026-10-16",
     "title": "VOSITACHILIK SHARTNOMASI (OFERTA)",
     "content": "<h1>…</h1><h2>1. Atamalar va ta’riflar</h2><p>…</p>",
     "url": "https://<backend>/oferta/oz"

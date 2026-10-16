@@ -3,7 +3,7 @@
 Laravel scheduler (`App\Console\Kernel::schedule`) o'z-o'zidan ishlamaydi:
 uni doimiy ishlab turadigan alohida jarayon chaqirishi kerak. Docker'da bu
 `docker-compose.prod.yml` dagi `scheduler` konteyneri, Railway'da esa
-alohida servis.
+`mylib` loyihasidagi `scheduler` servisi.
 
 Hozirgi vazifalar:
 
@@ -11,32 +11,31 @@ Hozirgi vazifalar:
 |---|---|---|
 | `model:prune --model=AppErrorLog` | har kuni 03:30 | Maxfiylik siyosati 5.3-band: IP va user agent 12 oydan ortiq saqlanmaydi |
 
-## Bir martalik sozlash (Railway paneli)
+## Railway'dagi sozlama
 
-1. Loyihada **+ New → GitHub Repo** → `muslim0203/my_lib` ni tanlang
-   (backend servisi bilan bir xil repo va branch).
-2. Yangi servis nomini `scheduler` qiling.
-3. **Settings → Config-as-code** da fayl yo'lini kiriting:
-   `/railway.scheduler.json`. U start buyrug'ini
-   `php artisan schedule:work` ga almashtiradi. Asosiy backend servisiga
-   bu fayl ta'sir qilmaydi.
-4. **Variables**: backend servisidagi barcha o'zgaruvchilarni bering
-   (`APP_KEY`, `DB_*`, `JWT_SECRET` va boshqalar). Eng qulayi - Shared
-   Variables yoki `${{backend.APP_KEY}}` ko'rinishidagi havolalar, shunda
-   qiymatlar ikki joyda alohida saqlanmaydi.
-5. **Networking**: domen bermang, servis tashqaridan so'rov qabul qilmaydi.
-6. Deploy qiling. Loglarda har daqiqada `No scheduled commands are ready
-   to run.` yoki vazifa nomi chiqishi kerak.
+`scheduler` servisi (production muhiti):
 
-Muhim: scheduler'ni **faqat bitta** servisda/replikada ishga tushiring,
-aks holda vazifalar ikki marta bajariladi.
+- **Manba**: `muslim0203/my_lib`, `master` branch (backend bilan bir xil kod).
+- **Builder**: Railpack.
+- **Start command**: `php artisan schedule:work --no-interaction`.
+- **Restart policy**: ON_FAILURE, 10 marta.
+- **Replikalar**: 1 ta (`us-west2`). Scheduler faqat bitta nusxada ishlashi
+  kerak, aks holda vazifalar ikki marta bajariladi.
+- **Domen**: yo'q, servis tashqaridan so'rov qabul qilmaydi.
+- **Variables**: barchasi backend'ga havola, masalan
+  `APP_KEY=${{backend.APP_KEY}}`. Backend'da qiymat o'zgarsa, bu yerda ham
+  o'zgaradi. Backend'ga yangi o'zgaruvchi qo'shilsa va u scheduler
+  vazifalariga kerak bo'lsa, uni shu yerga ham havola sifatida qo'shing.
+
+Railway config-as-code (`railway.json`) endi qabul qilinmaydi, shuning uchun
+sozlama repozitoriyda emas, servisning o'zida saqlanadi.
 
 ## Tekshirish
 
-Railway CLI orqali (`railway link`, keyin `scheduler` servisini tanlab):
+Deploy loglarida har daqiqada `No scheduled commands are ready to run.`
+(yoki vazifa nomi) chiqishi kerak. Ro'yxatni ko'rish uchun Railway CLI:
 
 ```bash
+railway link            # mylib loyihasi, scheduler servisi
 railway run php artisan schedule:list
 ```
-
-Ro'yxatda `model:prune` ko'rinishi kerak.

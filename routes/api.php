@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\FileManager\FileViewController;
 use App\Http\Controllers\Api\Links\LinkAuthorSubscriberController;
 use App\Http\Controllers\Api\MainBanner\MainBannerController;
 use App\Http\Controllers\Api\Notification\NotificationController;
+use App\Http\Controllers\Api\Oferta\OfertaController;
 use App\Http\Controllers\Api\Pay\ClickController;
 use App\Http\Controllers\Api\Pay\PaymeController;
 use App\Http\Controllers\Api\Product\ProductController;
@@ -178,6 +179,12 @@ Route::controller(CompanySocialNetworkController::class)
     ->group(function () {
         Route::get('/company-social-network/view', 'view')
             ->name('api.company-social-network.view');
+    });
+
+Route::controller(OfertaController::class)
+    ->group(function () {
+        Route::get('/oferta', 'view')
+            ->name('api.oferta.view');
     });
 
 Route::controller(QuestionController::class)

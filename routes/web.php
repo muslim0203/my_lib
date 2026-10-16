@@ -17,6 +17,7 @@ use App\Http\Controllers\Web\Enums\EnumProductStatusController;
 use App\Http\Controllers\Web\Enums\EnumProductTagsController;
 use App\Http\Controllers\Web\Enums\EnumProductTypesController;
 use App\Http\Controllers\Web\MainBanner\MainBannerController;
+use App\Http\Controllers\Web\Oferta\OfertaPageController;
 use App\Http\Controllers\Web\Product\ProductController;
 use App\Http\Controllers\Web\Proverb\ProverbController;
 use App\Http\Controllers\Web\Questions\QuestionAnswerController;
@@ -44,6 +45,12 @@ use Illuminate\Support\Facades\Route;
 | shuning uchun ular endi CSRF token talab qiladi.
 |
 */
+
+/*
+ * Ommaviy oferta sahifasi - login talab qilinmaydi.
+ */
+Route::get('oferta/{locale?}', [OfertaPageController::class, 'show'])
+    ->name('oferta.show');
 
 Route::get('/', function () {
     return view('pages.dashboard');

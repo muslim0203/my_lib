@@ -435,6 +435,26 @@ to‘liq qoidalar `app/Http/Requests/` da.
 | `GET` | `/api/company-partner/view` | — | — |
 | `GET` | `/api/company-social-network/view` | — | — |
 | `GET` | `/api/company/view` | — | — |
+| `GET` | `/api/oferta` | — | — |
+
+`/api/oferta` sotuvchilar uchun vositachilik shartnomasini (oferta)
+`Accept-Language` (`oz` | `uz` | `ru`) bo’yicha qaytaradi:
+
+```json
+{
+  "data": {
+    "lang": "oz",
+    "version": "2024-09-28",
+    "title": "VOSITACHILIK SHARTNOMASI (OFERTA)",
+    "content": "<h1>…</h1><h2>1. Atamalar va ta’riflar</h2><p>…</p>",
+    "url": "https://<backend>/oferta/oz"
+  }
+}
+```
+
+`content` tayyor HTML (`h1`, `h2`, `p`, `strong`). Uni ilovada
+ko’rsatish yoki `url` dagi ommaviy sahifani (login talab qilinmaydi)
+WebView’da ochish mumkin.
 
 ### Ma’lumotnomalar (enum)
 

@@ -459,12 +459,15 @@ Huquqiy hujjatlar `Accept-Language` (`oz` | `uz` | `ru`) bo’yicha qaytariladi.
     "version": "2026-10-16",
     "title": "XARIDORLAR UCHUN OMMAVIY OFERTA",
     "content": "<h1>…</h1><h2>1. Atamalar va ta’riflar</h2><p>…</p>",
-    "url": "https://<backend>/legal/buyer-offer/oz"
+    "url": "https://<backend>/legal/buyer-offer/oz",
+    "contacts": { "email": "info@my-lib.uz", "phone": "+998 97 007 33 96" }
   }
 }
 ```
 
-`/api/legal` ro’yxatida `content` bo’lmaydi. `content` tayyor HTML (`h1`,
+`contacts` admin paneldagi “Kompaniya” yozuvidan, bo’lmasa `config/legal.php`
+(`LEGAL_CONTACT_EMAIL`, `LEGAL_CONTACT_PHONE`) dan olinadi. `/api/legal`
+ro’yxatida `content` va `contacts` bo’lmaydi. `content` tayyor HTML (`h1`,
 `h2`, `p`, `strong`). Uni ilovada ko’rsatish yoki `url` dagi ommaviy
 sahifani (login talab qilinmaydi) WebView’da ochish mumkin. Ro’yxatdan
 o’tish oynasida xaridorlar ofertasi va maxfiylik siyosatiga, sotuvchi

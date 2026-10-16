@@ -83,6 +83,16 @@ class LegalDocumentTest extends TestCase
             ->assertJsonPath('data.url', url('/legal/seller-offer/' . $locale));
 
         $this->assertStringContainsString($text, $response->json('data.content'));
+        $this->assertSame('info@my-lib.uz', $response->json('data.contacts.email'));
+    }
+
+    public function test_page_shows_fallback_contacts_when_company_record_is_missing(): void
+    {
+        $this->get('/legal/privacy-policy/oz')
+            ->assertOk()
+            ->assertSee('mailto:info@my-lib.uz', false)
+            ->assertSee('tel:+998970073396', false)
+            ->assertSee('+998 97 007 33 96');
     }
 
     public function test_api_lists_documents_without_content(): void

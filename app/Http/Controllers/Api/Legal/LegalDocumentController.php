@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\Legal;
 
+use App\Core\Repository\Company\CompanyRepository;
 use App\Core\Services\Legal\LegalDocumentService;
+use App\Http\Controllers\Web\Legal\LegalDocumentPageController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
@@ -32,7 +34,10 @@ class LegalDocumentController extends Controller
     {
         abort_unless($service->exists($document), 404);
 
-        return response()->json(['data' => $service->toArray($document, $service->locale())]);
+        $data = $service->toArray($document, $service->locale());
+        $data['contacts'] = LegalDocumentPageController::contacts(app(CompanyRepository::class));
+
+        return response()->json(['data' => $data]);
     }
 
     /**

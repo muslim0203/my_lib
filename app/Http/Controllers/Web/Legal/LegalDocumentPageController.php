@@ -33,7 +33,7 @@ class LegalDocumentPageController extends Controller
             'locale' => $locale,
             'title' => $service->title($document, $locale),
             'content' => $service->content($document, $locale),
-            'contacts' => $this->contacts($companyRepository),
+            'contacts' => self::contacts($companyRepository),
             'languages' => [
                 LanguageEnum::_OZ->value => 'O‘zbekcha',
                 LanguageEnum::_UZ->value => 'Ўзбекча',
@@ -62,13 +62,14 @@ class LegalDocumentPageController extends Controller
     }
 
     /**
-     * Admin panelda "Kompaniya" bo'limida kiritilgan email va telefon.
-     * Hujjatlarda 1-tarafning aloqa ma'lumotlari shu yerdan olinadi.
+     * Admin panelda "Kompaniya" bo'limida kiritilgan email va telefon,
+     * bo'lmasa config/legal.php dagi qiymatlar. Hujjatlarda 1-tarafning
+     * aloqa ma'lumotlari shu yerdan olinadi.
      * Baza ishlamasa ham sahifa ochilishi kerak.
      *
      * @return array{email: ?string, phone: ?string}
      */
-    private function contacts(CompanyRepository $companyRepository): array
+    public static function contacts(CompanyRepository $companyRepository): array
     {
         try {
             $company = $companyRepository->findOne()->first();
@@ -77,8 +78,8 @@ class LegalDocumentPageController extends Controller
         }
 
         return [
-            'email' => $company?->email ?: null,
-            'phone' => $company?->phone ?: null,
+            'email' => $company?->email ?: (config('legal.contacts.email') ?: null),
+            'phone' => $company?->phone ?: (config('legal.contacts.phone') ?: null),
         ];
     }
 }

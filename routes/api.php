@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\FileManager\FileViewController;
 use App\Http\Controllers\Api\Links\LinkAuthorSubscriberController;
 use App\Http\Controllers\Api\MainBanner\MainBannerController;
 use App\Http\Controllers\Api\Notification\NotificationController;
-use App\Http\Controllers\Api\Oferta\OfertaController;
+use App\Http\Controllers\Api\Legal\LegalDocumentController;
 use App\Http\Controllers\Api\Pay\ClickController;
 use App\Http\Controllers\Api\Pay\PaymeController;
 use App\Http\Controllers\Api\Product\ProductController;
@@ -181,9 +181,15 @@ Route::controller(CompanySocialNetworkController::class)
             ->name('api.company-social-network.view');
     });
 
-Route::controller(OfertaController::class)
+Route::controller(LegalDocumentController::class)
     ->group(function () {
-        Route::get('/oferta', 'view')
+        Route::get('/legal', 'list')
+            ->name('api.legal.list');
+
+        Route::get('/legal/{document}', 'view')
+            ->name('api.legal.view');
+
+        Route::get('/oferta', 'sellerOffer')
             ->name('api.oferta.view');
     });
 

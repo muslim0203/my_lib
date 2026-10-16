@@ -17,7 +17,7 @@ use App\Http\Controllers\Web\Enums\EnumProductStatusController;
 use App\Http\Controllers\Web\Enums\EnumProductTagsController;
 use App\Http\Controllers\Web\Enums\EnumProductTypesController;
 use App\Http\Controllers\Web\MainBanner\MainBannerController;
-use App\Http\Controllers\Web\Oferta\OfertaPageController;
+use App\Http\Controllers\Web\Legal\LegalDocumentPageController;
 use App\Http\Controllers\Web\Product\ProductController;
 use App\Http\Controllers\Web\Proverb\ProverbController;
 use App\Http\Controllers\Web\Questions\QuestionAnswerController;
@@ -47,9 +47,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 /*
- * Ommaviy oferta sahifasi - login talab qilinmaydi.
+ * Ommaviy huquqiy hujjatlar (ofertalar, maxfiylik siyosati) - login
+ * talab qilinmaydi. `oferta` - sotuvchilar ofertasining qisqa manzili.
  */
-Route::get('oferta/{locale?}', [OfertaPageController::class, 'show'])
+Route::get('legal/{document}/{locale?}', [LegalDocumentPageController::class, 'show'])
+    ->name('legal.show');
+
+Route::get('oferta/{locale?}', [LegalDocumentPageController::class, 'sellerOffer'])
     ->name('oferta.show');
 
 Route::get('/', function () {

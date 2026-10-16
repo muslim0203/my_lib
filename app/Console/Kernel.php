@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Models\Logs\AppErrorLog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,7 +13,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Eski xatolar jurnalini (IP, user agent) o'chirish -
+        // Maxfiylik siyosati 5.3-band. Scheduler konteyneri: docker-compose.prod.yml.
+        $schedule->command('model:prune', ['--model' => [AppErrorLog::class]])
+            ->dailyAt('03:30')
+            ->onOneServer()
+            ->withoutOverlapping();
     }
 
     /**

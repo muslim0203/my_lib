@@ -2,6 +2,8 @@
 
 namespace App\Models\Logs;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,6 +20,20 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AppErrorLog extends Model
 {
+    use MassPrunable;
+
+    /**
+     * Jurnalda IP-manzil va user agent bor. Maxfiylik siyosatining 5.3-bandi
+     * ularni 12 oydan ortiq saqlamaslikka va'da beradi; tozalashni
+     * `model:prune` bajaradi (App\Console\Kernel::schedule).
+     */
+    public const RETENTION_MONTHS = 12;
+
+    public function prunable(): Builder
+    {
+        return static::query()->where('created_at', '<', now()->subMonths(self::RETENTION_MONTHS));
+    }
+
     protected $fillable = [
         'message',
         'context',

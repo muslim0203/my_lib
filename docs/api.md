@@ -435,26 +435,33 @@ to‘liq qoidalar `app/Http/Requests/` da.
 | `GET` | `/api/company-partner/view` | — | — |
 | `GET` | `/api/company-social-network/view` | — | — |
 | `GET` | `/api/company/view` | — | — |
+| `GET` | `/api/legal` | — | — |
+| `GET` | `/api/legal/{document}` | — | — |
 | `GET` | `/api/oferta` | — | — |
 
-`/api/oferta` sotuvchilar uchun vositachilik shartnomasini (oferta)
-`Accept-Language` (`oz` | `uz` | `ru`) bo’yicha qaytaradi:
+Huquqiy hujjatlar `Accept-Language` (`oz` | `uz` | `ru`) bo’yicha qaytariladi.
+`{document}`: `seller-offer` (sotuvchilar ofertasi), `buyer-offer`
+(xaridorlar ofertasi), `privacy-policy` (maxfiylik siyosati).
+`/api/oferta` - `/api/legal/seller-offer` ning eski manzili.
 
 ```json
 {
   "data": {
+    "document": "buyer-offer",
     "lang": "oz",
     "version": "2026-10-16",
-    "title": "VOSITACHILIK SHARTNOMASI (OFERTA)",
+    "title": "XARIDORLAR UCHUN OMMAVIY OFERTA",
     "content": "<h1>…</h1><h2>1. Atamalar va ta’riflar</h2><p>…</p>",
-    "url": "https://<backend>/oferta/oz"
+    "url": "https://<backend>/legal/buyer-offer/oz"
   }
 }
 ```
 
-`content` tayyor HTML (`h1`, `h2`, `p`, `strong`). Uni ilovada
-ko’rsatish yoki `url` dagi ommaviy sahifani (login talab qilinmaydi)
-WebView’da ochish mumkin.
+`/api/legal` ro’yxatida `content` bo’lmaydi. `content` tayyor HTML (`h1`,
+`h2`, `p`, `strong`). Uni ilovada ko’rsatish yoki `url` dagi ommaviy
+sahifani (login talab qilinmaydi) WebView’da ochish mumkin. Ro’yxatdan
+o’tish oynasida xaridorlar ofertasi va maxfiylik siyosatiga, sotuvchi
+arizasida sotuvchilar ofertasiga havola berilishi kerak.
 
 ### Ma’lumotnomalar (enum)
 

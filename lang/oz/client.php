@@ -246,4 +246,5 @@ return array(
     'Authorization Token not found' => 'Avtorizatsiya tokeni topilmadi',
     'Token is Expire' => 'Token muddati tugagan',
     'Token is Invalid' => 'Token yaroqsiz',
+    'Seller account must be closed through support' => 'Sotuvchi akkaunti sotuvchilar ofertasini bekor qilish orqali yopiladi: qo‘llab-quvvatlash xizmatiga yozing',
 );

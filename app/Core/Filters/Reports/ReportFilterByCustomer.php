@@ -27,6 +27,10 @@ class ReportFilterByCustomer
          */
         $user = Auth::user();
 
+        // Sotuvchi xaridorning to'liq ismini ko'rmaydi, faqat bosh harflarini
+        // ("A*** K."): Maxfiylik siyosati 4.1.5-band. Maydon nomi API
+        // mosligi uchun o'zgarmagan.
+        //
         // $title is a COLUMN IDENTIFIER and therefore cannot be bound; it is
         // allow-listed against App\Core\Enums\LanguageEnum in LanguageHelper.
         $title = LanguageHelper::getTitle();
@@ -44,7 +48,10 @@ class ReportFilterByCustomer
                                         group by po.customer_id
                                         order by amount_books desc
                                     ),
-                         list as (select su.first_name || ' ' || su.last_name as customer_full_name,
+                         list as (select substr(su.first_name, 1, 1) || '***'
+                                             || case when coalesce(su.last_name, '') <> ''
+                                                     then ' ' || substr(su.last_name, 1, 1) || '.'
+                                                     else '' end as customer_full_name,
                                          r.*
                                   from users u
                                        inner join report r on r.customer_id = u.id

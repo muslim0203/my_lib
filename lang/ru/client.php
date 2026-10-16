@@ -246,4 +246,5 @@ return array(
     'Authorization Token not found' => 'Токен авторизации не найден',
     'Token is Expire' => 'Срок действия токена истёк',
     'Token is Invalid' => 'Неверный токен',
+    'Seller account must be closed through support' => 'Аккаунт продавца закрывается путем расторжения оферты для продавцов: напишите в службу поддержки',
 );

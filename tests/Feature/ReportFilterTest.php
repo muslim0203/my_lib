@@ -192,6 +192,17 @@ class ReportFilterTest extends TestCase
         );
     }
 
+    public function test_customer_report_shows_only_masked_buyer_names(): void
+    {
+        ReportFilterByCustomer::search($this->request([]));
+
+        $sql = $this->rowsQuery()['sql'];
+
+        $this->assertStringContainsString("substr(su.first_name, 1, 1) || '***'", $sql);
+        $this->assertStringNotContainsString("su.first_name || ' ' || su.last_name", $sql);
+        $this->assertStringNotContainsString('middle_name', $sql);
+    }
+
     // -----------------------------------------------------------------
     // 2. Qiymatlar SQL matniga emas, bindinglarga tushishi (M4)
     // -----------------------------------------------------------------

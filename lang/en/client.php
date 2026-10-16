@@ -246,4 +246,5 @@ return array(
     'Authorization Token not found' => 'Authorization token not found',
     'Token is Expire' => 'Token has expired',
     'Token is Invalid' => 'Token is invalid',
+    'Seller account must be closed through support' => 'A seller account is closed by terminating the seller offer: please write to support',
 );

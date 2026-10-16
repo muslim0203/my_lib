@@ -3,6 +3,7 @@
 namespace App\Core\Services\Product;
 
 use App\Core\Enums\ProductPriceTypeEnum;
+use App\Core\Enums\Reports\MerchantStatusEnum;
 use App\Core\Repository\Product\ProductRepository;
 use App\Core\Repository\Product\ProductsOrderRepository;
 use App\Models\Products\ProductsOrder;
@@ -77,7 +78,13 @@ class ProductsOrderService
 
         $webServiceAndPaymentSystemMoneyAmount = $orderPriceValue - (float)$merchantMoneyAmount;
 
-        $productsOrder = new ProductsOrder();
+        // Pul qaytarilgandan keyin qayta sotib olish: (product_id,
+        // customer_id) unique, shuning uchun bekor qilingan order qayta
+        // ishlatiladi.
+        $productsOrder = $this->productsOrderRepository->findByProductAndCustomer($product_id, $user_id)
+            ?? new ProductsOrder();
+        $productsOrder->setEnabled(true);
+        $productsOrder->setStatus(MerchantStatusEnum::_NEW->value);
         $productsOrder->setOrderPrice($order_price);
         $productsOrder->setProductId($product_id);
         $productsOrder->setPaymentType($payment_type);
@@ -92,5 +99,16 @@ class ProductsOrderService
         $productsOrder->setWebServiceAndPaymentSystemMoneyAmount((string)$webServiceAndPaymentSystemMoneyAmount);
         $this->productsOrderRepository->save($productsOrder);
 
+    }
+
+    /**
+     * Xaridorning Mahsulotga kirish huquqini yopadi: to'lov bekor qilinganda
+     * yoki pul qaytarilganda (Xaridorlar ofertasi 6.5-band).
+     *
+     * @return int yopilgan orderlar soni
+     */
+    public function revoke(int $product_id, int $user_id, ?string $transaction_id = null): int
+    {
+        return $this->productsOrderRepository->disable($product_id, $user_id, $transaction_id);
     }
 }

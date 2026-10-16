@@ -345,7 +345,14 @@ to‘liq qoidalar `app/Http/Requests/` da.
 | `GET` | `/api/user/detail-list` | JWT | — |
 | `PUT` | `/api/user/edit` | JWT | `first_name`, `last_name`, `middle_name`, `current_address`, `description` …(+3) |
 | `GET` | `/api/user/interest-list` | JWT | — |
+| `DELETE` | `/api/user/delete-account` | JWT | `confirm` (true) |
 | `POST` | `/api/user/select-interest` | JWT | `types`, `genres` |
+
+`DELETE /api/user/delete-account` xaridor akkauntini o’chiradi: profil va
+email anonimlashtiriladi, sotib olingan kitoblarga kirish yopiladi, token
+bekor qilinadi. Sotuvchi (muallif yoki tashkilot arizasi bor) uchun `409`
+qaytadi: ular ofertani bekor qilish orqali yopiladi.
+
 
 ### Mahsulotlar
 

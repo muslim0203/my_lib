@@ -179,7 +179,11 @@ class PaymeService implements PaymentInterface
                 PaymePaymentStateEnum::CLOSED_TRANSACTION->value,
             ], true)
         ) {
-            $cancelTransaction = $request['params']['reason'] == 3 ? '-1' : '-2';
+            // Payme protokoli: bajarilgunga qadar bekor qilish -1, bajarilgandan
+            // keyin (pul qaytarish) -2. Ilgari holat `reason` dan aniqlanardi,
+            // bu noto'g'ri edi.
+            $wasPerformed = $order->getState() === PaymePaymentStateEnum::PERFORM_TRANSACTION->value;
+            $cancelTransaction = $wasPerformed ? '-2' : '-1';
             $order->setState($cancelTransaction);
             $order->setCancelReason($request['params']['reason']);
             $order->setTransactionCancelTime((string)round(microtime(true) * 1000));
@@ -187,6 +191,16 @@ class PaymeService implements PaymentInterface
                 $order->setTransactionPerformTime('0');
             }
             $orderRepository->save($order);
+
+            // Pul qaytarilgan: Xaridorning kitobga kirishi yopiladi
+            // (Xaridorlar ofertasi 6.5-band).
+            if ($wasPerformed) {
+                app(ProductsOrderService::class)->revoke(
+                    $order->getProductId(),
+                    $order->getClientId(),
+                    (string)$order->getTransactionId()
+                );
+            }
         }
 
         return [

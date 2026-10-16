@@ -27,11 +27,44 @@ class ProductsOrderRepository
      * @param int $user_id
      * @return bool
      */
+    /**
+     * Faol (bekor qilinmagan) order bormi. Pul qaytarilgan yoki to'lov bekor
+     * qilingan order (`enabled = false`) qayta sotib olishga to'sqinlik
+     * qilmaydi.
+     */
     public function existsProductOrder(int $product_id, int $user_id): bool
     {
         return ProductsOrder::query()->where('product_id', $product_id)
             ->where('customer_id', $user_id)
+            ->where('enabled', true)
             ->exists();
+    }
+
+    /**
+     * (product_id, customer_id) bo'yicha yagona order - faol yoki bekor
+     * qilingan. Jadvalda shu juftlik uchun unique cheklov bor.
+     */
+    public function findByProductAndCustomer(int $product_id, int $user_id): ?ProductsOrder
+    {
+        return ProductsOrder::query()->where('product_id', $product_id)
+            ->where('customer_id', $user_id)
+            ->first();
+    }
+
+    /**
+     * Kirish huquqini yopadi. `$transaction_id` berilsa, faqat shu to'lov
+     * orqali yaratilgan order yopiladi (boshqa to'lov bilan qayta sotib
+     * olingan bo'lsa tegilmaydi).
+     *
+     * @return int yopilgan orderlar soni
+     */
+    public function disable(int $product_id, int $user_id, ?string $transaction_id = null): int
+    {
+        return ProductsOrder::query()->where('product_id', $product_id)
+            ->where('customer_id', $user_id)
+            ->where('enabled', true)
+            ->when($transaction_id !== null, fn($q) => $q->where('transaction_id', $transaction_id))
+            ->update(['enabled' => false, 'updated_at' => now()]);
     }
 
     /**

@@ -113,6 +113,9 @@ Route::controller(UserController::class)
         Route::get('user/interest-list', 'interestList')
             ->name('user.interest-list');
 
+        Route::delete('user/delete-account', 'deleteAccount')
+            ->name('user.delete-account');
+
     });
 
 Route::controller(AuthorController::class)

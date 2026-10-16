@@ -136,6 +136,15 @@ class ClickService implements ClickContract
             return ClickResult::actionNotFound();
         }
 
+        /**
+         * @var ProductsOrderRepository $productsOrderRepository
+         */
+        $productsOrderRepository = app(ProductsOrderRepository::class);
+
+        if ($productsOrderRepository->existsProductOrder($clickPayment->getProductId(), $clickPayment->getUserId())) {
+            return ClickResult::alreadyPaid();
+        }
+
         $clickPayment->setClickTransId(intval($params['click_trans_id']));
         $clickPayment->setClickPaydocId(intval($params['click_paydoc_id']));
         $clickPayment->setAction($params['action']);
@@ -145,21 +154,8 @@ class ClickService implements ClickContract
         $clickPayment->setSignString($params['sign_string']);
         $clickPaymentRepository->save($clickPayment);
 
-        $product = $clickPayment->product;
-
-        /**
-         * @var ProductsOrderService $productsOrderService
-         */
-        $productsOrderService = app(ProductsOrderService::class);
-        $productsOrderService->create(
-            $clickPayment->getProductId(),
-            PaymentTypeEnum::TYPE_CLICK->value,
-            (string)$clickPayment->getClickTransId(),
-            $clickPayment->getUserId(),
-            $clickPayment->getAmount(),
-            (string)$product->getPriceMerchant(),
-            $product->priceType->getPercentage()
-        );
+        // Kirish huquqi bu yerda EMAS, completePayment da (error = 0)
+        // beriladi: prepare dan keyin to'lov muvaffaqiyatsiz bo'lishi mumkin.
 
         return new ClickResult(
             error: ClickErrorCodeEnum::CODE_SUCCESS->value,
@@ -219,6 +215,39 @@ class ClickService implements ClickContract
         // chek yuboriladi. Bu qadam callback natijasiga ta'sir qilmaydi.
         // Takroriy complete callback yuqoridagi actionNotFound tekshiruvida
         // to'xtaydi, shuning uchun chek ikki marta ketmaydi.
+        /**
+         * @var ProductsOrderService $productsOrderService
+         */
+        $productsOrderService = app(ProductsOrderService::class);
+
+        if (intval($params['error']) === 0) {
+            $product = $clickPayment->product;
+
+            // Prepare va complete orasida boshqa to'lov bilan sotib olingan
+            // bo'lishi mumkin: callback ichida abort(400) bo'lmasin.
+            if (app(ProductsOrderRepository::class)->existsProductOrder($clickPayment->getProductId(), $clickPayment->getUserId())) {
+                Log::warning('Click completePayment: product already owned', ['click_payment_id' => $clickPayment->getId()]);
+            } else {
+                $productsOrderService->create(
+                    $clickPayment->getProductId(),
+                    PaymentTypeEnum::TYPE_CLICK->value,
+                    (string)$clickPayment->getClickTransId(),
+                    $clickPayment->getUserId(),
+                    $clickPayment->getAmount(),
+                    (string)$product->getPriceMerchant(),
+                    $product->priceType->getPercentage()
+                );
+            }
+        } else {
+            // To'lov amalga oshmadi. Eski kod kirishni prepare da berardi -
+            // shunday yaratilgan order bo'lsa, u yopiladi.
+            $productsOrderService->revoke(
+                $clickPayment->getProductId(),
+                $clickPayment->getUserId(),
+                (string)$clickPayment->getClickTransId()
+            );
+        }
+
         if (intval($params['error']) === 0 && config('click.fiscal.enabled')) {
             app(ClickFiscalService::class)->sendReceipt($clickPayment);
         }
